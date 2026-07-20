@@ -1,0 +1,47 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Length 461 >>
+stream
+BT
+/F1 28 Tf
+72 710 Td
+(Mohammed Nagoor Meerasha) Tj
+/F1 14 Tf
+0 -36 Td
+(AI/ML Learner | Full Stack Developer | Java and C++ Programmer) Tj
+0 -30 Td
+(Education: B.E Computer Science and Engineering, PSG iTech, 2023-2027) Tj
+0 -24 Td
+(Skills: React, Tailwind CSS, Three.js, Framer Motion, GSAP, Python, Java, C++) Tj
+0 -24 Td
+(Experience: AI/ML Internship Program, project building, and software learning journey.) Tj
+0 -36 Td
+(Contact: nagoor@example.com) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000316 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+828
+%%EOF

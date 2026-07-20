@@ -1,0 +1,25 @@
+import { Router } from "express";
+import * as analytics from "../controllers/analyticsController.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { resolveOwner } from "../middleware/owner.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+
+export const analyticsRoutes = Router();
+analyticsRoutes.post("/track", resolveOwner, asyncHandler(analytics.track));
+analyticsRoutes.use(requireAuth, requireAdmin);
+analyticsRoutes.get("/overview", asyncHandler(analytics.overview));
+analyticsRoutes.get("/traffic", asyncHandler(analytics.traffic));
+analyticsRoutes.get("/traffic/daily", asyncHandler(analytics.dailyTraffic));
+analyticsRoutes.get("/traffic/weekly", asyncHandler(analytics.weeklyTraffic));
+analyticsRoutes.get("/traffic/monthly", asyncHandler(analytics.monthlyTraffic));
+analyticsRoutes.get("/pages", asyncHandler(analytics.pages));
+analyticsRoutes.get("/projects", asyncHandler(analytics.projects));
+analyticsRoutes.get("/resume", asyncHandler(analytics.resume));
+analyticsRoutes.get("/devices", asyncHandler(analytics.devices));
+analyticsRoutes.get("/browsers", asyncHandler(analytics.browsers));
+analyticsRoutes.get("/referrers", asyncHandler(analytics.referrers));
+analyticsRoutes.get("/scroll-depth", asyncHandler(analytics.scrollDepth));
+analyticsRoutes.get("/engagement", asyncHandler(analytics.engagement));
+analyticsRoutes.get("/countries", asyncHandler(analytics.countries));
+analyticsRoutes.get("/cities", asyncHandler(analytics.cities));
+analyticsRoutes.get("/realtime", asyncHandler(analytics.realtime));
