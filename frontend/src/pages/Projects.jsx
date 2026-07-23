@@ -1,546 +1,256 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  FaChartLine,
+  FaArrowLeft,
+  FaCheck,
   FaChevronDown,
   FaChevronUp,
-  FaCodeBranch,
   FaExternalLinkAlt,
   FaGithub,
-  FaLayerGroup,
-  FaLightbulb,
-  FaProjectDiagram,
-  FaRocket,
-  FaShieldAlt,
-  FaStar,
-  FaSyncAlt,
-  FaTasks,
+  FaTimes,
 } from "react-icons/fa";
-import { usePortfolio } from "../context/PortfolioContext";
-import { projects as showcaseProjects } from "../data/projectShowcase";
+import { FaArrowRightLong } from "react-icons/fa6";
+import { projects } from "../data/projectShowcase";
 import { trackEvent } from "../services/analyticsService";
 
 const filters = [
-  { label: "All", value: "all" },
-  { label: "Completed", value: "completed" },
-  { label: "In Progress", value: "current" },
-  { label: "Upcoming", value: "upcoming" },
-  { label: "AI / ML", value: "AI/ML" },
-  { label: "Compiler", value: "Compiler Design" },
-  { label: "Agentic", value: "Agentic AI" },
-  { label: "Healthcare", value: "Healthcare AI" },
-  { label: "Full Stack", value: "Full Stack" },
-  { label: "Cybersecurity", value: "Cybersecurity" },
+  ["all", "All"],
+  ["AI/ML", "AI / ML"],
+  ["Agentic AI", "Agentic AI"],
+  ["Full Stack", "Full Stack"],
+  ["Finance", "Finance"],
+  ["Healthcare", "Healthcare"],
+  ["Compiler Design", "Compiler"],
+  ["Cybersecurity", "Cybersec"],
 ];
 
-const groups = [
-  {
-    key: "completed",
-    label: "Completed (Live)",
-    note: "Finished builds, practical prototypes, and portfolio-ready systems.",
-  },
-  {
-    key: "current",
-    label: "Current (In Progress)",
-    note: "Active products being designed, refined, and expanded.",
-  },
-  {
-    key: "upcoming",
-    label: "Upcoming",
-    note: "Future AI products and platform ideas planned for development.",
-  },
+const statusGroups = [
+  ["completed", "Completed Projects", "Finished and fully functional projects"],
+  ["current", "In Progress Projects", "Active builds currently being improved"],
+  ["upcoming", "Upcoming Projects", "Planned systems ready for development"],
 ];
 
-const tabLabels = [
-  ["overview", "Overview"],
-  ["features", "Features"],
-  ["technology", "Technology"],
-  ["algorithms", "Algorithms"],
-  ["workflow", "Workflow"],
-  ["architecture", "Architecture"],
-  ["challenges", "Challenges"],
-  ["roadmap", "Roadmap"],
+const statusSummary = [
+  ["completed", "Completed", "90%"],
+  ["current", "In Progress", "60%"],
+  ["upcoming", "Upcoming", "0%"],
 ];
 
-const analysisBlocks = [
-  ["fiveWOneH", "5W1H", FaChartLine],
-  ["star", "STAR", FaStar],
-];
+function validUrl(value = "") {
+  return /^https?:\/\/[^\s#]+$/i.test(String(value).trim());
+}
 
 export default function Projects() {
   const [filter, setFilter] = useState("all");
-  const { data } = usePortfolio();
-  const projects = data.projects?.length >= showcaseProjects.length ? data.projects : showcaseProjects;
+  const [selectedProject, setSelectedProject] = useState(projects[0]);
+  const [visibleCounts, setVisibleCounts] = useState({ completed: 6, current: 3, upcoming: 2 });
+  const refs = useRef({});
 
-  const filteredProjects = useMemo(
-    () => projects.filter((project) => matchesFilter(project, filter)),
-    [projects, filter]
-  );
+  const filteredProjects = useMemo(() => {
+    if (filter === "all") return projects;
+    return projects.filter((item) => item.categories.includes(filter) || item.technologies.includes(filter));
+  }, [filter]);
 
-  const scrollToProject = (projectId) => {
-    document.getElementById(`project-${projectId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  const openProject = (item) => {
+    setSelectedProject(item);
+    refs.current[item.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    trackEvent("project_analysis", { page: "projects", metadata: { projectTitle: item.title } });
   };
 
   return (
     <section className="shell page-pad projects-showcase-page">
-      <ProjectsHero projects={projects} onSelect={scrollToProject} />
+      <div className="projects-dashboard-head">
+        <div className="project-status-tabs">
+          {statusSummary.map(([key, label, value], index) => (
+            <span key={key} className={index === 0 ? "active" : ""}>
+              {label} <b>{value}</b>
+            </span>
+          ))}
+        </div>
+        <div className="project-category-tabs">
+          {filters.map(([value, label]) => (
+            <button key={value} type="button" className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <motion.div
-        className="showcase-filter-row"
-        initial={{ opacity: 0, y: 24 }}
+        className="projects-dashboard-title"
+        initial={{ opacity: 0, y: 28 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.15 }}
+        transition={{ duration: 0.55 }}
       >
-        {filters.map((item) => (
-          <button
-            key={item.value}
-            className={filter === item.value ? "active" : ""}
-            type="button"
-            onClick={() => setFilter(item.value)}
-          >
-            {item.label}
-          </button>
-        ))}
+        <h1>Projects</h1>
+        <p>Explore my projects across AI, Full Stack, Healthcare, Finance, Compiler Design and more.</p>
       </motion.div>
 
-      <div className="project-section-stack">
-        {groups.map((group) => {
-          const groupProjects = filteredProjects.filter((project) => project.statusGroup === group.key);
-          if (!groupProjects.length) return null;
+      <div className="projects-dashboard-layout">
+        <div className="projects-card-column">
+          {statusGroups.map(([key, title, note]) => {
+            const groupItems = filteredProjects.filter((item) => item.statusGroup === key);
+            if (!groupItems.length) return null;
+            const visible = groupItems.slice(0, visibleCounts[key]);
+            const hidden = groupItems.length > visible.length;
 
-          return (
-            <motion.section
-              className="project-showcase-section"
-              key={group.key}
-              initial={{ opacity: 0, y: 42 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.1 }}
-              transition={{ duration: 0.65, ease: "easeOut" }}
-            >
-              <div className="project-section-heading">
-                <span>{group.label}</span>
-                <p>{group.note}</p>
-              </div>
-              <div className="showcase-card-list">
-                {groupProjects.map((project, index) => (
-                  <ProjectShowcaseCard key={project.id || project.title} project={project} index={index} />
-                ))}
-              </div>
-            </motion.section>
-          );
-        })}
+            return (
+              <section className="project-group-block" key={key}>
+                <div className="project-group-heading">
+                  <h2>{title} <span>{groupItems.length}</span></h2>
+                  <p>{note}</p>
+                </div>
+                <div className="compact-project-grid">
+                  {visible.map((item, index) => (
+                    <ProjectCard
+                      key={item.id}
+                      project={item}
+                      index={index}
+                      selected={selectedProject?.id === item.id}
+                      onSelect={() => openProject(item)}
+                      refSetter={(node) => {
+                        refs.current[item.id] = node;
+                      }}
+                    />
+                  ))}
+                </div>
+                {hidden && (
+                  <button
+                    type="button"
+                    className="see-more-projects"
+                    onClick={() => setVisibleCounts((current) => ({ ...current, [key]: current[key] + 6 }))}
+                  >
+                    See More {title.replace(" Projects", "")} <FaChevronDown />
+                  </button>
+                )}
+              </section>
+            );
+          })}
+        </div>
+        <ProjectAnalysis project={selectedProject} onClose={() => setSelectedProject(null)} />
       </div>
     </section>
   );
 }
 
-function ProjectsHero({ projects, onSelect }) {
-  const title = "Projects Showcase";
-  const previewProjects = projects.slice(0, 14);
-  const heroRef = useRef(null);
-  const [scrollShift, setScrollShift] = useState(0);
-  const [orbitRotation, setOrbitRotation] = useState(0);
-  const dragRef = useRef({ active: false, startX: 0, lastX: 0, moved: false });
-  const spacing = 184;
-  const loopSize = previewProjects.length * spacing;
-
-  useEffect(() => {
-    const updateScrollShift = () => {
-      if (!heroRef.current) return;
-      const rect = heroRef.current.getBoundingClientRect();
-      const viewport = window.innerHeight || 1;
-      const total = rect.height + viewport;
-      const progress = Math.min(1, Math.max(0, (viewport - rect.top) / total));
-      setScrollShift(progress * (loopSize + 420));
-    };
-    updateScrollShift();
-    window.addEventListener("scroll", updateScrollShift, { passive: true });
-    window.addEventListener("resize", updateScrollShift);
-    return () => {
-      window.removeEventListener("scroll", updateScrollShift);
-      window.removeEventListener("resize", updateScrollShift);
-    };
-  }, [loopSize]);
-
-  const rotateOrbit = (delta) => {
-    setOrbitRotation((value) => value + delta);
-  };
-
-  const handlePointerDown = (event) => {
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    dragRef.current = {
-      active: true,
-      startX: event.clientX,
-      lastX: event.clientX,
-      moved: false,
-    };
-  };
-
-  const handlePointerMove = (event) => {
-    const drag = dragRef.current;
-    if (!drag.active) return;
-    const deltaX = event.clientX - drag.lastX;
-    if (Math.abs(event.clientX - drag.startX) > 4) drag.moved = true;
-    drag.lastX = event.clientX;
-    rotateOrbit(deltaX * 1.6);
-  };
-
-  const handlePointerUp = (event) => {
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-    setTimeout(() => {
-      dragRef.current.moved = false;
-    }, 0);
-    dragRef.current.active = false;
-  };
-
-  const handleWheel = (event) => {
-    event.preventDefault();
-    rotateOrbit((event.deltaX || event.deltaY) * -0.72);
-  };
-
-  const getCardTransform = (index) => {
-    if (!previewProjects.length) return {};
-    const shift = scrollShift + orbitRotation;
-    const wrapped = ((((index * spacing - shift) % loopSize) + loopSize) % loopSize) - loopSize / 2;
-    const curve = wrapped / 190;
-    const x = Math.sin(curve) * 310;
-    const y = wrapped * 0.92;
-    const z = Math.cos(curve) * 220 - 180;
-    const rotateY = Math.sin(curve) * -68;
-    const rotateZ = Math.sin(curve * 0.6) * -5;
-    const scale = 0.74 + Math.max(0, 1 - Math.abs(wrapped) / 460) * 0.48;
-    const opacity = Math.max(0.12, 1 - Math.abs(wrapped) / 720);
-    return {
-      transform: `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), ${z}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`,
-      opacity,
-      zIndex: Math.round(1000 - Math.abs(wrapped)),
-    };
-  };
-
-  return (
-    <div className="projects-showcase-hero" ref={heroRef}>
-      <motion.div
-        className="projects-hero-copy"
-        initial={{ opacity: 0, x: -40 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-      >
-        <span className="section-kicker">My Work Universe</span>
-        <h1 className="projects-title" aria-label={title}>
-          {["Projects", "Showcase"].map((line, lineIndex) => (
-            <span className="projects-title-line" key={line}>
-              {line.split("").map((letter, index) => (
-                <motion.span
-                  key={`${letter}-${index}`}
-                  initial={{ opacity: 0, y: 34, rotateX: -45 }}
-                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                  transition={{ delay: (lineIndex * 8 + index) * 0.025, duration: 0.5, ease: "easeOut" }}
-                >
-                  {letter}
-                </motion.span>
-              ))}
-            </span>
-          ))}
-        </h1>
-        <motion.p
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45, duration: 0.6 }}
-        >
-          Completed products, active builds, and upcoming AI systems shown as cinematic project stories with
-          architecture, workflow, impact, and analysis views.
-        </motion.p>
-        <motion.strong
-          className="project-click-note"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.58, duration: 0.5 }}
-        >
-          Just click the project to know more about project.
-        </motion.strong>
-      </motion.div>
-
-      <motion.div
-        className="project-image-orbit"
-        style={{ "--count": previewProjects.length }}
-        initial={{ opacity: 0, scale: 0.92 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onWheel={handleWheel}
-        onContextMenu={(event) => event.preventDefault()}
-        role="region"
-        aria-label="Rotating project spiral. Drag left or right to rotate."
-      >
-        <button
-          type="button"
-          className="project-frame-arrow project-frame-arrow-top"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            rotateOrbit(-spacing);
-          }}
-          aria-label="Move project showcase backward"
-        >
-          <FaChevronUp />
-        </button>
-        {previewProjects.map((project, index) => (
-          <button
-            key={project.id}
-            type="button"
-            className="orbit-project-card"
-            style={getCardTransform(index)}
-            onClick={(event) => {
-              if (dragRef.current.moved) {
-                event.preventDefault();
-                return;
-              }
-              onSelect(project.id);
-            }}
-            aria-label={`Scroll to ${project.title}`}
-          >
-            <img src={project.image} alt="" loading="lazy" />
-          </button>
-        ))}
-        <button
-          type="button"
-          className="project-frame-arrow project-frame-arrow-bottom"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            rotateOrbit(spacing);
-          }}
-          aria-label="Move project showcase forward"
-        >
-          <FaChevronDown />
-        </button>
-      </motion.div>
-      <span className="hero-float-circle circle-a" />
-      <span className="hero-float-circle circle-b" />
-      <span className="hero-float-circle circle-c" />
-    </div>
-  );
-}
-
-function ProjectShowcaseCard({ project, index }) {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [flipped, setFlipped] = useState(false);
-  const [analysisMode, setAnalysisMode] = useState("fiveWOneH");
-  const [previewImage, setPreviewImage] = useState(false);
-  const tabItems = project.tabs?.[activeTab];
-
-  const openAnalysis = () => {
-    setAnalysisMode("fiveWOneH");
-    setFlipped(true);
-    trackEvent("project_analysis", {
-      page: "projects",
-      metadata: { projectTitle: project.title, status: project.statusGroup },
-    });
-  };
-
-  const openStarExplanation = () => {
-    setAnalysisMode("star");
-    setFlipped(true);
-    trackEvent("project_star_explanation", {
-      page: "projects",
-      metadata: { projectTitle: project.title, status: project.statusGroup },
-    });
-  };
+function ProjectCard({ project, index, selected, onSelect, refSetter }) {
+  const showGithub = project.statusGroup === "completed" && validUrl(project.github);
+  const showDemo = project.statusGroup === "completed" && validUrl(project.live);
+  const note = project.statusNote;
 
   return (
     <motion.article
-      id={`project-${project.id}`}
-      className={`project-showcase-card ${flipped ? "flipped" : ""}`}
-      style={{ "--accent": project.accent || "#00cea8", "--accent-2": project.accentAlt || "#915eff" }}
-      initial={{ opacity: 0, y: 90, rotateX: 8 }}
-      whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{ duration: 0.8, delay: index * 0.06, ease: "easeOut" }}
+      ref={refSetter}
+      className={`compact-project-card ${selected ? "selected" : ""} status-${project.statusGroup}`}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.42, delay: index * 0.04 }}
+      onClick={onSelect}
     >
-      <div className="project-showcase-inner">
-        <div className="project-showcase-face project-front">
-          <div className="project-banner">
-            <button className="project-image-button" type="button" onClick={() => setPreviewImage(true)} aria-label={`Open ${project.title} image`}>
-              <img src={project.image} alt={`${project.title} preview`} loading="lazy" />
-            </button>
-            <div className="project-banner-overlay">
-              <span>{project.statusLabel}</span>
-              <h2>{project.title}</h2>
-              <p>{project.tagline}</p>
-            </div>
-          </div>
-
-          <div className="project-body-grid">
-            <div className="project-main-story">
-              <p className="project-description">{project.description}</p>
-
-              <div className="project-tab-bar" role="tablist" aria-label={`${project.title} details`}>
-                {tabLabels.map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={activeTab === key ? "active" : ""}
-                    onClick={() => setActiveTab(key)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="project-tab-content">
-                <ProjectTabContent value={tabItems} />
-              </div>
-
-              <div className="tag-row project-showcase-tags">
-                {project.tags?.map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
-
-              <div className="project-metrics-row">
-                {project.metrics?.map((metric) => (
-                  <div key={metric.label}>
-                    <strong>{metric.value}</strong>
-                    <span>{metric.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="project-flip-hint">
-              <span>AI project guide</span>
-              <div className="mini-architecture">
-                {["5W1H", "STAR", "Summary", "Detail"].map((item) => (
-                  <small key={item}>{item}</small>
-                ))}
-              </div>
-              <p>Click AI Summary to know the project in 5W1H. Click AI Explanation to know the detailed STAR answer.</p>
-            </div>
-          </div>
-
-          <div className="project-card-footer">
-            <ProjectActions project={project} onAnalyze={openAnalysis} onStar={openStarExplanation} />
-          </div>
-        </div>
-
-        <div className="project-showcase-face project-back" aria-hidden={!flipped}>
-          <div className="analysis-header">
-            <span>{analysisMode === "star" ? "AI Explanation" : "AI Summary"}</span>
-            <h2>{project.fullTitle || project.title}</h2>
-            <p>
-              {analysisMode === "star"
-                ? "Detailed STAR format explanation for interviews."
-                : "Balanced 5W1H summary focused on what, why, who, where, when, and how."}
-            </p>
-          </div>
-
-          <div className={`analysis-grid single ${analysisMode}`}>
-            {analysisBlocks
-              .filter(([key]) => key === analysisMode)
-              .map(([key, label, Icon]) => (
-                <AnalysisBlock
-                  key={key}
-                  id={key === "star" ? `project-${project.id}-star` : undefined}
-                  label={label}
-                  icon={Icon}
-                  value={project.analysis?.[key]}
-                />
-              ))}
-          </div>
-
-          <div className="project-card-footer back-only">
-            <button className="analysis-back-button" type="button" onClick={() => setFlipped(false)}>
-              Return to project preview <FaSyncAlt />
-            </button>
-          </div>
-        </div>
+      <div className="compact-project-image">
+        <img src={project.image} alt={`${project.title} preview`} loading="lazy" />
+        <span className="project-badge"><FaCheck /> {project.statusLabel}</span>
+        <strong>{project.progress}%</strong>
       </div>
-      {previewImage && (
-        <div className="project-image-modal" role="dialog" aria-modal="true" aria-label={`${project.title} full image`} onClick={() => setPreviewImage(false)}>
-          <button type="button" onClick={() => setPreviewImage(false)}>Close</button>
-          <img src={project.image} alt={`${project.title} full preview`} />
-        </div>
-      )}
+      <h3>{project.title}</h3>
+      <p>{project.description}</p>
+      <div className="project-chip-row">
+        {project.categories.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}
+      </div>
+      <div className="project-chip-row tech">
+        {project.technologies.slice(0, 4).map((tag) => <span key={tag}>{tag}</span>)}
+      </div>
+      {note && <div className="project-progress-note">{note}</div>}
+      <div className="compact-project-actions" onClick={(event) => event.stopPropagation()}>
+        {showGithub && <a href={project.github} target="_blank" rel="noreferrer"><FaGithub /> GitHub</a>}
+        {showDemo && <a href={project.live} target="_blank" rel="noreferrer"><FaExternalLinkAlt /> Demo</a>}
+        <button type="button" onClick={onSelect}>Analysis</button>
+      </div>
     </motion.article>
   );
 }
 
-function ProjectTabContent({ value }) {
-  if (!value) return null;
-  const items = Array.isArray(value) ? value : [value];
-  return items.map((item) => (
-    <span key={item}>
-      <FaSyncAlt /> {item}
-    </span>
-  ));
-}
-
-function AnalysisBlock({ id, label, icon: Icon, value }) {
-  if (!value || (Array.isArray(value) && !value.length)) return null;
+function ProjectAnalysis({ project, onClose }) {
+  if (!project) return null;
+  const showGithub = project.statusGroup === "completed" && validUrl(project.github);
+  const showDemo = project.statusGroup === "completed" && validUrl(project.live);
 
   return (
-    <div id={id} className="analysis-block">
-      <h3>
-        <Icon /> {label}
-      </h3>
-      {Array.isArray(value) ? (
-        <ul>
-          {value.map((item) => (
-            <li key={item}>{renderAnalysisLine(item)}</li>
+    <aside className="project-analysis-panel" aria-label={`${project.title} analysis`}>
+      <button type="button" className="analysis-close" onClick={onClose} aria-label="Close analysis"><FaTimes /></button>
+      <div className="analysis-top-row">
+        <span className={`project-badge status-${project.statusGroup}`}><FaCheck /> {project.statusLabel}</span>
+        <strong>{project.progress}%</strong>
+      </div>
+      <div className="analysis-intro">
+        <div className="analysis-preview-frame">
+          <img src={project.image} alt={`${project.title} preview`} />
+        </div>
+        <div>
+          <h2>{project.title}</h2>
+          <p>{project.description}</p>
+          <div className="project-chip-row">
+            {project.categories.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}
+          </div>
+          <div className="project-chip-row tech">
+            {project.technologies.slice(0, 5).map((tag) => <span key={tag}>{tag}</span>)}
+          </div>
+        </div>
+      </div>
+
+      <div className="analysis-info-grid">
+        <InfoBlock title="Problem" items={[project.problem]} />
+        <InfoBlock title="Solution" items={[project.solution]} />
+        <InfoBlock title="Key Features" items={project.features} check />
+        <InfoBlock title="Tech Stack" items={project.techStack} />
+      </div>
+
+      <div className="workflow-strip">
+        <h3>Workflow</h3>
+        <div>
+          {project.workflow.map((step, index) => (
+            <span key={step}>
+              <em>{step}</em>
+              {index < project.workflow.length - 1 && <FaArrowRightLong />}
+            </span>
           ))}
-        </ul>
-      ) : (
-        <p>{renderAnalysisLine(value)}</p>
-      )}
+        </div>
+      </div>
+
+      <div className="analysis-bottom-grid">
+        <InfoBlock title="Challenges" items={project.challenges} />
+        <InfoBlock title="Limitations" items={project.limitations} />
+        <InfoBlock title="My Role / Contribution" items={[project.role]} />
+      </div>
+
+      <details className="project-deep-details">
+        <summary>STAR explanation</summary>
+        <ul>{project.analysis.star.map((item) => <li key={item}>{item}</li>)}</ul>
+      </details>
+      <details className="project-deep-details">
+        <summary>5W1H summary</summary>
+        <ul>{project.analysis.fiveWOneH.map((item) => <li key={item}>{item}</li>)}</ul>
+      </details>
+
+      <div className="analysis-action-row">
+        {showGithub && <a href={project.github} target="_blank" rel="noreferrer">GitHub <FaExternalLinkAlt /></a>}
+        {showDemo && <a href={project.live} target="_blank" rel="noreferrer">Live Demo <FaExternalLinkAlt /></a>}
+        <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><FaArrowLeft /> Back to Projects</button>
+      </div>
+    </aside>
+  );
+}
+
+function InfoBlock({ title, items, check = false }) {
+  return (
+    <div className="analysis-info-block">
+      <h3>{title}</h3>
+      <ul>
+        {items.map((item) => (
+          <li key={item}>{check && <FaCheck />}<span>{item}</span></li>
+        ))}
+      </ul>
     </div>
   );
-}
-
-function renderAnalysisLine(item = "") {
-  const match = String(item).match(/^([^:]+):(.*)$/);
-  if (!match) return item;
-  return (
-    <>
-      <strong>{match[1]}:</strong>
-      {match[2]}
-    </>
-  );
-}
-
-function ProjectActions({ project, onAnalyze, onStar, flipped = false }) {
-  return (
-    <div className="project-action-row">
-      <a
-        href={project.github}
-        target="_blank"
-        rel="noreferrer"
-        onClick={() => trackEvent("project_github_click", { page: "projects", metadata: { projectTitle: project.title } })}
-      >
-        <FaGithub /> GitHub
-      </a>
-      <a
-        href={project.live}
-        target="_blank"
-        rel="noreferrer"
-        onClick={() => trackEvent("project_live_click", { page: "projects", metadata: { projectTitle: project.title } })}
-      >
-        <FaExternalLinkAlt /> Live Demo
-      </a>
-      <button type="button" onClick={onAnalyze}>
-        <FaChartLine /> {flipped ? "Preview" : "AI Summary"}
-      </button>
-      <button type="button" onClick={onStar}>
-        <FaStar /> AI Explanation
-      </button>
-    </div>
-  );
-}
-
-function matchesFilter(project, filter) {
-  if (filter === "all") return true;
-  if (["completed", "current", "upcoming"].includes(filter)) return project.statusGroup === filter;
-  return project.category === filter || project.categories?.includes(filter) || project.tags?.includes(filter);
 }
