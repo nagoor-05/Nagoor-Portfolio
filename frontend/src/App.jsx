@@ -6,6 +6,7 @@ import Preloader from "./components/Preloader";
 import Landing from "./pages/Landing";
 import AiCopilot from "./components/ai/AiCopilot";
 import { usePortfolio } from "./context/PortfolioContext";
+import { useSound } from "./context/SoundContext";
 import { usePageTracking } from "./hooks/usePageTracking";
 
 const Home = lazy(() => import("./pages/Home"));
@@ -26,6 +27,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data } = usePortfolio();
+  const { playMusic } = useSound();
   usePageTracking();
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export default function App() {
 
   const enterPortfolio = async () => {
     speakWelcome();
+    void playMusic();
     if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
       try {
         await document.documentElement.requestFullscreen();

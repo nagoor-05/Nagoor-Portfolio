@@ -15,23 +15,34 @@ import { recordPortfolioView, trackEvent } from "../services/analyticsService";
 export default function Home() {
   const { data } = usePortfolio();
   const { hero, socialLinks } = data;
+  const resumeUrl = "/resume/nagoor_3.pdf";
   const [viewCount, setViewCount] = useState(hero.viewCount || 501);
   const typed = useTypewriter(hero.roles);
 
   useEffect(() => {
     let cancelled = false;
-    const key = "nagoor-view-requested";
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, "true");
+    const fallbackBase = Number(hero.viewCount || 501);
+    const increaseLocalViewCount = () => {
+      const stored = Number(localStorage.getItem("nagoor-local-view-count"));
+      const next = Number.isFinite(stored) && stored > 0 ? stored + 1 : fallbackBase + 1;
+      localStorage.setItem("nagoor-local-view-count", String(next));
+      setViewCount(next);
+    };
     recordPortfolioView()
       .then((result) => {
-        if (!cancelled && result?.views) setViewCount(result.views);
+        if (cancelled) return;
+        const apiViews = result?.views ?? result?.data?.views ?? result?.count ?? result?.data?.count;
+        const nextViews = Number(apiViews);
+        if (Number.isFinite(nextViews) && nextViews > 0) setViewCount(nextViews);
+        else increaseLocalViewCount();
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) increaseLocalViewCount();
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [hero.viewCount]);
 
   return (
     <section className="hero-section shell page-pad">
@@ -53,7 +64,7 @@ export default function Home() {
           <MagneticButton to="/contact" className="ghost">
             <FaEnvelope /> Contact Me
           </MagneticButton>
-          <MagneticButton to={data.resume.pdfUrl} className="ghost" onClick={() => trackEvent("resume_download", { page: "home" })}>
+          <MagneticButton to={resumeUrl} className="ghost" onClick={() => trackEvent("resume_download", { page: "home" })}>
             <FaDownload /> Resume
           </MagneticButton>
         </div>

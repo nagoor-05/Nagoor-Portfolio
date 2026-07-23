@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import {
   FaArrowLeft,
@@ -20,6 +21,7 @@ const statusGroups = [
 ];
 
 const initialVisible = { completed: 4, current: 3, upcoming: 2 };
+const DEFAULT_LIVE_DEMO = "https://nagoor-personal-portfolio.vercel.app/projects";
 
 function validUrl(value = "") {
   return /^https?:\/\/[^\s#]+$/i.test(String(value).trim());
@@ -38,40 +40,79 @@ function normalizeStatus(project) {
   return "completed";
 }
 
-function normalizeProject(project, index) {
-  const statusGroup = normalizeStatus(project);
-  const statusLabel = project.statusLabel || (statusGroup === "current" ? "In Progress" : statusGroup === "upcoming" ? "Upcoming" : "Completed");
-  const analysis = project.analysis || {};
+function projectKey(project = {}) {
+  return String(project.slug || project.id || project.title || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+const fallbackProjectMap = new Map(
+  fallbackProjects.map((project, index) => [
+    projectKey(project),
+    { ...project, displayOrder: project.displayOrder || project.order || index + 1 },
+  ])
+);
+
+function mergeProjectData(project, index) {
+  const fallback = fallbackProjectMap.get(projectKey(project)) || {};
+  const projectProgress = Number(project.progress ?? String(project.progress || "").replace("%", ""));
+  const fallbackProgress = Number(fallback.progress ?? String(fallback.progress || "").replace("%", ""));
   return {
-    id: project.id || project.slug || `project-${index}`,
-    slug: project.slug || project.id || `project-${index}`,
-    title: project.title,
+    ...fallback,
+    ...project,
+    analysis: {
+      ...(fallback.analysis || {}),
+      ...(project.analysis || {}),
+    },
+    copilotCoverage: {
+      ...(fallback.copilotCoverage || {}),
+      ...(project.copilotCoverage || {}),
+    },
+    displayOrder: Number(project.displayOrder || project.order || fallback.displayOrder || index + 1),
+    progress: Number.isFinite(projectProgress) && projectProgress > 0
+      ? projectProgress
+      : Number.isFinite(fallbackProgress)
+        ? fallbackProgress
+        : project.progress,
+  };
+}
+
+function normalizeProject(project, index) {
+  const merged = mergeProjectData(project, index);
+  const statusGroup = normalizeStatus(merged);
+  const statusLabel = merged.statusLabel || (statusGroup === "current" ? "In Progress" : statusGroup === "upcoming" ? "Upcoming" : "Completed");
+  const analysis = merged.analysis || {};
+  return {
+    id: merged.id || merged.slug || `project-${index}`,
+    slug: merged.slug || merged.id || `project-${index}`,
+    title: merged.title,
     statusGroup,
     statusLabel,
-    statusNote: project.statusNote || (statusGroup === "current" ? "Development in progress" : statusGroup === "upcoming" ? "Planned project" : ""),
-    progress: Number(project.progress ?? String(project.progress || "0").replace("%", "")) || 0,
-    description: project.shortDescription || project.description || project.overview || "",
-    categories: toArray(project.categories),
-    technologies: toArray(project.technologies),
-    image: project.image || "/projects/personal-portfolio.png",
-    imageAlt: project.imageAlt || `${project.title} preview`,
-    github: project.githubUrl || project.github || "",
-    live: project.demoUrl || project.live || "",
-    problem: project.problem || "Problem details are available in the portfolio knowledge base.",
-    solution: project.solution || "Solution details are available in the portfolio knowledge base.",
-    features: toArray(project.features).slice(0, 6),
-    techStack: Array.isArray(project.techStack)
-      ? project.techStack
-      : Object.entries(project.techStack || {}).map(([label, value]) => `${label}: ${value}`),
-    workflow: toArray(project.workflow).slice(0, 5),
-    challenges: toArray(project.challenges).slice(0, 4),
-    limitations: toArray(project.limitations).slice(0, 4),
-    role: project.contribution || project.role || "Designed the workflow, planned modules, and structured the project for portfolio-ready explanation.",
-    visibleInitially: project.visibleInitially,
-    displayOrder: Number(project.displayOrder || project.order || index + 1),
+    statusNote: merged.statusNote || (statusGroup === "current" ? "Development in progress" : statusGroup === "upcoming" ? "Planned project" : ""),
+    progress: Number(merged.progress ?? String(merged.progress || "0").replace("%", "")) || (statusGroup === "completed" ? 90 : statusGroup === "current" ? 40 : 0),
+    description: merged.shortDescription || merged.description || merged.overview || "",
+    categories: toArray(merged.categories),
+    technologies: toArray(merged.technologies),
+    image: merged.image || "/projects/personal-portfolio.png",
+    imageAlt: merged.imageAlt || `${merged.title} preview`,
+    github: merged.githubUrl || merged.github || "",
+    live: merged.demoUrl || merged.live || (statusGroup === "completed" ? DEFAULT_LIVE_DEMO : ""),
+    problem: merged.problem || "Problem details are available in the portfolio knowledge base.",
+    solution: merged.solution || "Solution details are available in the portfolio knowledge base.",
+    features: toArray(merged.features).slice(0, 6),
+    techStack: Array.isArray(merged.techStack)
+      ? merged.techStack
+      : Object.entries(merged.techStack || {}).map(([label, value]) => `${label}: ${value}`),
+    workflow: toArray(merged.workflow).slice(0, 5),
+    challenges: toArray(merged.challenges).slice(0, 4),
+    limitations: toArray(merged.limitations).slice(0, 4),
+    role: merged.contribution || merged.role || "Designed the workflow, planned modules, and structured the project for portfolio-ready explanation.",
+    visibleInitially: merged.visibleInitially,
+    displayOrder: merged.displayOrder,
     analysis: {
-      star: analysis.star || project.star || project.copilotCoverage?.star || [],
-      fiveWOneH: analysis.fiveWOneH || project.fiveWOneH || project.copilotCoverage?.fiveWOneH || [],
+      star: analysis.star || merged.star || merged.copilotCoverage?.star || [],
+      fiveWOneH: analysis.fiveWOneH || merged.fiveWOneH || merged.copilotCoverage?.fiveWOneH || [],
     },
   };
 }
@@ -83,8 +124,15 @@ export default function Projects() {
   const lastFocusRef = useRef(null);
 
   const projects = useMemo(() => {
-    const source = data.projects?.length ? data.projects : fallbackProjects;
-    return source.map(normalizeProject).sort((a, b) => a.displayOrder - b.displayOrder);
+    const mergedProjects = new Map();
+    fallbackProjects.forEach((project, index) => {
+      mergedProjects.set(projectKey(project), normalizeProject(project, index));
+    });
+    (data.projects || []).forEach((project, index) => {
+      const key = projectKey(project) || `database-project-${index}`;
+      mergedProjects.set(key, normalizeProject(project, index));
+    });
+    return [...mergedProjects.values()].sort((a, b) => a.displayOrder - b.displayOrder);
   }, [data.projects]);
 
   const openProject = (item, trigger) => {
@@ -191,7 +239,7 @@ function ProjectCard({ project, index, onSelect }) {
       <p className="project-helper-text">Click Analysis to know more about this project.</p>
       <div className="compact-project-actions">
         {showGithub && <a href={project.github} target="_blank" rel="noreferrer"><FaGithub /> GitHub</a>}
-        {showDemo && <a href={project.live} target="_blank" rel="noreferrer"><FaExternalLinkAlt /> Demo</a>}
+        {showDemo && <a href={project.live} target="_blank" rel="noreferrer"><FaExternalLinkAlt /> Live Demo</a>}
         <button type="button" onClick={onSelect}>Analysis</button>
       </div>
     </motion.article>
@@ -231,12 +279,12 @@ function ProjectAnalysisModal({ project, onClose }) {
     };
   }, [project, onClose]);
 
-  if (!project) return null;
+  if (!project || typeof document === "undefined") return null;
   const showGithub = project.statusGroup === "completed" && validUrl(project.github);
   const showDemo = project.statusGroup === "completed" && validUrl(project.live);
   const workflow = project.workflow.length ? project.workflow.slice(0, 5) : ["Input", "Process", "Analyze", "Validate", "Output"];
 
-  return (
+  return createPortal(
     <div className="project-modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <motion.aside
         ref={dialogRef}
@@ -295,7 +343,8 @@ function ProjectAnalysisModal({ project, onClose }) {
           <button type="button" onClick={onClose}><FaArrowLeft /> Back to Projects</button>
         </div>
       </motion.aside>
-    </div>
+    </div>,
+    document.body
   );
 }
 

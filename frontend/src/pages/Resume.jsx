@@ -7,7 +7,7 @@ import { trackEvent } from "../services/analyticsService";
 export default function Resume() {
   const { data } = usePortfolio();
   const { resume, educations, experiences, projects, skillGroups, socialLinks, contact, about } = data;
-  const resumeUrl = resume.pdfUrl;
+  const resumeUrl = "/resume/nagoor_3.pdf";
   const educationItems = educations.slice(1, 4);
   const coreSkills = [...new Set(resume.coreSkills || [])];
   const programmingSkills = skillGroups
