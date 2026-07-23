@@ -56,8 +56,8 @@ export default function App() {
   };
 
   const enterPortfolio = async () => {
+    await playMusic();
     speakWelcome();
-    void playMusic();
     if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
       try {
         await document.documentElement.requestFullscreen();

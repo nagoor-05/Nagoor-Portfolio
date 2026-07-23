@@ -24,6 +24,7 @@ import GlassCard from "../components/GlassCard";
 import { usePortfolio } from "../context/PortfolioContext";
 import keinsLogo from "../assets/keins-school-logo.png";
 import psgLogo from "../assets/logos/psg-itech.png";
+import synecxLogo from "../assets/logos/synecx-ai-labs.png";
 
 const EDUCATION_DOCUMENT_PASSWORD = "Nagoor@2005";
 
@@ -50,7 +51,7 @@ const summaryCards = [
     meta: ["SynecX AI Labs", "AI/ML Intern", "Agentic AI - Automation - Practical AI Workflows"],
     description: "Currently gaining practical exposure to AI workflows, intelligent automation, API integration, and real-world software development.",
     icon: FaLaptopCode,
-    logoText: "SX",
+    logo: synecxLogo,
   },
 ];
 
@@ -63,6 +64,7 @@ const timelineItems = [
   ["2024", "Learning and Recovery Phase", "Consistency Building", "Continued learning and skill development while managing personal challenges, strengthening discipline, patience, adaptability, and consistency.", FaHeartPulse],
   ["2025", "Started Practical Development", "Programming and Web Development", "Began building academic and real-world projects using Python, Java, C++, React, Node.js, Flask, databases, machine learning, and automation tools.", FaCode],
   ["2026", "AI and Software Engineering Focus", "Current Growth Phase", "Currently focused on Agentic AI, Machine Learning, Full-Stack Development, Data Structures and Algorithms, intelligent automation, and production-ready applications.", FaWandMagicSparkles],
+  ["2026-Present", "SynecX AI Labs Internship", "AI/ML Intern - Agentic AI, Automation, and Practical AI Workflows", "Gaining practical exposure to AI workflows, intelligent automation, API integration, and real-world software development at SynecX AI Labs.", FaLaptopCode],
   ["2027", "Expected Graduation", "Software Engineering Path", "Expected to complete the B.E. Computer Science and Engineering degree and begin a professional career in software engineering and intelligent systems development.", FaBriefcase],
 ];
 

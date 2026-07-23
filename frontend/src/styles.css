@@ -7322,3 +7322,163 @@ button {
     grid-row: auto !important;
   }
 }
+
+/* Final requested polish: full resume view, exact profile image fit, music-safe spacing, and education alignment. */
+.resume-page {
+  max-width: 1180px !important;
+  margin-inline: auto !important;
+}
+
+.resume-pdf-shell {
+  width: min(94vw, 880px) !important;
+  height: min(82vh, 1240px) !important;
+  min-height: 780px !important;
+  margin: 34px auto 30px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(145, 94, 255, 0.48) !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 26px 90px rgba(0, 0, 0, 0.42), 0 0 34px rgba(0, 229, 255, 0.12) !important;
+}
+
+.resume-pdf-shell iframe {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  border: 0 !important;
+  background: #ffffff !important;
+}
+
+.resume-actions-card {
+  width: min(94vw, 720px) !important;
+  margin-inline: auto !important;
+}
+
+.about-profile-card-v2 {
+  overflow: hidden !important;
+}
+
+.about-profile-card-v2 img {
+  width: 100% !important;
+  height: min(52vh, 520px) !important;
+  max-height: 520px !important;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  padding: 0 !important;
+}
+
+.education-summary-logo {
+  width: 148px !important;
+  height: 148px !important;
+  display: grid !important;
+  place-items: center !important;
+  margin: 0 0 20px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(0, 229, 255, 0.5) !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.12) !important;
+}
+
+.education-summary-logo img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  object-fit: contain !important;
+  padding: 10px !important;
+}
+
+.education-summary-card {
+  min-height: 430px !important;
+}
+
+.education-v2-timeline {
+  max-width: 1160px !important;
+  margin: 36px auto !important;
+  padding: 8px 0 !important;
+}
+
+.education-v2-timeline li {
+  grid-template-columns: minmax(300px, 1fr) 68px minmax(360px, 1fr) !important;
+  gap: 24px !important;
+  align-items: stretch !important;
+  margin-bottom: 30px !important;
+}
+
+.timeline-copy,
+.timeline-note {
+  min-height: 116px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+.timeline-copy {
+  padding: 14px 0 !important;
+}
+
+.timeline-note {
+  padding: 18px 20px !important;
+}
+
+.timeline-icon {
+  align-self: center !important;
+  width: 52px !important;
+  height: 52px !important;
+}
+
+.timeline-copy h3,
+.timeline-copy strong,
+.timeline-note p {
+  line-height: 1.55 !important;
+}
+
+@media (max-width: 920px) {
+  .education-v2-timeline::before {
+    left: 28px !important;
+    transform: none !important;
+  }
+
+  .education-v2-timeline li,
+  .education-v2-timeline li:nth-child(even) {
+    grid-template-columns: 58px minmax(0, 1fr) !important;
+    gap: 12px !important;
+    align-items: start !important;
+  }
+
+  .education-v2-timeline li .timeline-icon,
+  .education-v2-timeline li:nth-child(even) .timeline-icon {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .education-v2-timeline li .timeline-copy,
+  .education-v2-timeline li:nth-child(even) .timeline-copy {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-self: stretch !important;
+    text-align: left !important;
+  }
+
+  .education-v2-timeline li .timeline-note,
+  .education-v2-timeline li:nth-child(even) .timeline-note {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .resume-pdf-shell {
+    width: calc(100vw - 24px) !important;
+    height: 78vh !important;
+    min-height: 560px !important;
+  }
+
+  .about-profile-card-v2 img {
+    height: 430px !important;
+  }
+
+  .education-summary-card {
+    min-height: auto !important;
+  }
+}

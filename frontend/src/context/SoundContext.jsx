@@ -7,9 +7,10 @@ const DEFAULT_VOLUME = 0.2;
 
 function readStoredEnabled() {
   try {
-    return localStorage.getItem(ENABLED_KEY) === "true";
+    const saved = localStorage.getItem(ENABLED_KEY);
+    return saved === null ? true : saved === "true";
   } catch {
-    return false;
+    return true;
   }
 }
 
