@@ -5,7 +5,7 @@ const SECRET_PATTERNS = [
   /pa-[a-zA-Z0-9_-]+/g,
   /sd_[a-zA-Z0-9_-]+/g,
   /Bearer\s+[a-zA-Z0-9._-]+/g,
-  /((?:OPENROUTER|OPENAI|JINA|VOYAGE|SUPADATA)_API_KEY(?:_\d+)?\s*=\s*)[^\s]+/gi,
+  /((?:OPENROUTER|OPENAI|GEMINI|JINA|VOYAGE|SUPADATA)_API_KEY(?:_\d+)?\s*=\s*)[^\s]+/gi,
   /(JWT_SECRET\s*=\s*)[^\s]+/gi,
   /(MONGO_URI\s*=\s*)[^\s]+/gi,
 ];

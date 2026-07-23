@@ -83,6 +83,9 @@ export async function aiHealth(req, res) {
   return res.json({
     success: true,
     configured: config.configured,
+    primaryProvider: config.providers[0]?.type || null,
+    primaryModel: config.providers[0]?.model || config.model,
+    providers: config.providersEnabled,
     model: config.model,
     timestamp: new Date().toISOString(),
   });

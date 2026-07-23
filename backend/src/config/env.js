@@ -4,6 +4,10 @@ dotenv.config();
 
 const defaultMongoUri = ["mongodb:", "//127.0.0.1:27017/portfolio_builder"].join("");
 
+function cleanKeys(keys) {
+  return [...new Set(keys.filter(Boolean).map((key) => key.trim()).filter(Boolean))];
+}
+
 export const env = {
   port: Number(process.env.PORT || 5000),
   nodeEnv: process.env.NODE_ENV || "development",
@@ -17,19 +21,26 @@ export const env = {
     .map((url) => url.trim())
     .filter(Boolean),
   openRouterApiKey: process.env.OPENROUTER_API_KEY || "",
-  openRouterApiKeys: [
+  openRouterApiKeys: cleanKeys([
     process.env.OPENROUTER_API_KEY,
     process.env.OPENROUTER_API_KEY_2,
     ...(process.env.OPENROUTER_API_KEYS || "").split(","),
-  ].filter(Boolean).map((key) => key.trim()),
+  ]),
   openRouterModel: process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini",
   openRouterBaseUrl: process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
   openRouterSiteUrl: process.env.OPENROUTER_SITE_URL || process.env.CLIENT_URL || "http://127.0.0.1:5173",
   openRouterSiteName: process.env.OPENROUTER_SITE_NAME || "Nagoor Portfolio Copilot",
-  openAiApiKeys: [
+  geminiApiKeys: cleanKeys([
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    ...(process.env.GEMINI_API_KEYS || "").split(","),
+  ]),
+  geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+  geminiBaseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta",
+  openAiApiKeys: cleanKeys([
     process.env.OPENAI_API_KEY,
     ...(process.env.OPENAI_API_KEYS || "").split(","),
-  ].filter(Boolean).map((key) => key.trim()),
+  ]),
   openAiModel: process.env.OPENAI_MODEL || "gpt-4o-mini",
   openAiBaseUrl: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
   jinaApiKey: process.env.JINA_API_KEY || "",

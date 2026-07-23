@@ -170,6 +170,7 @@ function TypingIndicator() {
 }
 
 function getFriendlyError(error) {
+  if (error?.userMessage) return error.userMessage;
   if (error?.name === "AbortError") return "The portfolio assistant took too long to respond. Please try again.";
   if (error?.status === 429) return "Too many Copilot questions. Please wait a minute and try again.";
   if (error?.status === 400) return error.message || "Please enter a valid question.";

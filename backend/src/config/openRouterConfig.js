@@ -9,6 +9,13 @@ export function getOpenRouterConfig() {
       baseUrl: env.openRouterBaseUrl,
       type: "openrouter",
     })),
+    ...env.geminiApiKeys.map((apiKey, index) => ({
+      name: `gemini-${index + 1}`,
+      apiKey,
+      model: env.geminiModel,
+      baseUrl: env.geminiBaseUrl,
+      type: "gemini",
+    })),
     ...env.openAiApiKeys.map((apiKey, index) => ({
       name: `openai-${index + 1}`,
       apiKey,
@@ -26,6 +33,11 @@ export function getOpenRouterConfig() {
     siteUrl: env.openRouterSiteUrl,
     siteName: env.openRouterSiteName,
     allowInsecureTls: env.openRouterAllowInsecureTls,
+    providersEnabled: {
+      openrouter: env.openRouterApiKeys.length > 0,
+      gemini: env.geminiApiKeys.length > 0,
+      openai: env.openAiApiKeys.length > 0,
+    },
     maxTokens: env.aiMaxTokens,
     temperature: env.aiTemperature,
     timeoutMs: env.aiTimeoutMs,
