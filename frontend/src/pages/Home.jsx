@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   FaArrowRight,
@@ -9,12 +10,28 @@ import Logo3D from "../components/Logo3D";
 import MagneticButton from "../components/MagneticButton";
 import { useTypewriter } from "../utils/useTypewriter";
 import { usePortfolio } from "../context/PortfolioContext";
-import { trackEvent } from "../services/analyticsService";
+import { recordPortfolioView, trackEvent } from "../services/analyticsService";
 
 export default function Home() {
   const { data } = usePortfolio();
   const { hero, socialLinks } = data;
+  const [viewCount, setViewCount] = useState(hero.viewCount || 501);
   const typed = useTypewriter(hero.roles);
+
+  useEffect(() => {
+    let cancelled = false;
+    const key = "nagoor-view-requested";
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "true");
+    recordPortfolioView()
+      .then((result) => {
+        if (!cancelled && result?.views) setViewCount(result.views);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section className="hero-section shell page-pad">
@@ -58,10 +75,10 @@ export default function Home() {
             </a>
           ))}
         </div>
-        <div className="views-pill" aria-label={`${hero.viewCount || 501} portfolio views`}>
+        <div className="views-pill" aria-label={`${viewCount} portfolio views`}>
           <span />
           <FaEye />
-          <strong>{hero.viewCount || 501}</strong>
+          <strong>{viewCount}</strong>
           <em>Views</em>
         </div>
       </motion.div>

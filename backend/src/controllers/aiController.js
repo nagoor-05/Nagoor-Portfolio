@@ -2,7 +2,7 @@ import { ChatLog } from "../models/ChatLog.js";
 import { AnalyticsEvent } from "../models/AnalyticsEvent.js";
 import { askOpenRouter } from "../services/openRouterService.js";
 import { buildPortfolioCopilotPrompt } from "../prompts/portfolioCopilotPrompt.js";
-import { buildApprovedPortfolioContext } from "../services/portfolioContextService.js";
+import { buildRelevantPortfolioContext, getCopilotMetadata } from "../services/copilotKnowledgeService.js";
 import { getOpenRouterConfig } from "../config/openRouterConfig.js";
 import { saveChatLog } from "../services/chatLogService.js";
 import { getPreflightAnswer, guardAiAnswer } from "../services/responseGuardService.js";
@@ -22,12 +22,13 @@ async function runAi(req, instruction = "") {
     };
   }
 
-  const portfolio = await buildApprovedPortfolioContext(req.owner.username);
-  if (!portfolio) throw createHttpError("Portfolio context is unavailable.", 404);
+  const portfolio = await buildRelevantPortfolioContext({ owner: req.owner, question: message, history });
   const system = buildPortfolioCopilotPrompt(portfolio, instruction);
   try {
     const result = await askOpenRouter({ system, question: message, history, sessionId: conversationId });
     const answer = guardAiAnswer(result.answer);
+    const responseTimeMs = Date.now() - startedAt;
+    const metadata = getCopilotMetadata(portfolio, result, responseTimeMs);
     await Promise.all([
       saveChatLog({
         ownerId: req.owner._id,
@@ -36,14 +37,17 @@ async function runAi(req, instruction = "") {
         answer,
         model: result.model,
         usage: result.usage,
-        responseTimeMs: Date.now() - startedAt,
+        responseTimeMs,
       }),
-      AnalyticsEvent.create({ ownerId: req.owner._id, eventType: "ai_question", page: "ai-copilot", sessionId: conversationId }),
+      AnalyticsEvent.create({ ownerId: req.owner._id, eventType: "ai_question", page: "ai-copilot", sessionId: conversationId, metadata }),
     ]);
     return {
       answer,
       conversationId,
       model: result.model,
+      provider: result.provider,
+      intent: portfolio.intent,
+      detectedProjects: portfolio.detectedProjects,
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
@@ -78,6 +82,26 @@ export async function aiLogs(req, res) {
   return sendSuccess(res, logs);
 }
 
+export async function aiFeedback(req, res) {
+  const { helpful, question = "", answer = "", intent = "", detectedProjects = [], responseTimeMs = 0 } = req.body || {};
+  if (typeof helpful !== "boolean") throw createHttpError("helpful must be true or false", 400);
+  const event = await AnalyticsEvent.create({
+    ownerId: req.owner._id,
+    eventType: helpful ? "ai_feedback_helpful" : "ai_feedback_not_helpful",
+    page: "ai-copilot",
+    sessionId: req.body?.conversationId || "",
+    metadata: {
+      helpful,
+      question: String(question).slice(0, 240),
+      answerPreview: String(answer).slice(0, 240),
+      intent,
+      detectedProjects: Array.isArray(detectedProjects) ? detectedProjects.slice(0, 3) : [],
+      responseTimeMs: Math.max(0, Number(responseTimeMs) || 0),
+    },
+  });
+  return sendSuccess(res, { id: event._id }, "Feedback saved", 201);
+}
+
 export async function aiHealth(req, res) {
   const config = getOpenRouterConfig();
   return res.json({
@@ -109,6 +133,42 @@ export async function aiSuggestions(req, res) {
       "How can I contact him?",
       "Give me a recruiter-friendly summary.",
     ],
+  });
+}
+
+export async function aiAnalytics(req, res) {
+  const ownerId = req.user._id;
+  const [intents, projects, providers, helpful, notHelpful, failed] = await Promise.all([
+    AnalyticsEvent.aggregate([
+      { $match: { ownerId, eventType: "ai_question" } },
+      { $group: { _id: "$metadata.intent", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]),
+    AnalyticsEvent.aggregate([
+      { $match: { ownerId, eventType: "ai_question", "metadata.detectedProjects.0": { $exists: true } } },
+      { $unwind: "$metadata.detectedProjects" },
+      { $group: { _id: "$metadata.detectedProjects", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]),
+    AnalyticsEvent.aggregate([
+      { $match: { ownerId, eventType: "ai_question" } },
+      { $group: { _id: "$metadata.provider", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]),
+    AnalyticsEvent.countDocuments({ ownerId, eventType: "ai_feedback_helpful" }),
+    AnalyticsEvent.countDocuments({ ownerId, eventType: "ai_feedback_not_helpful" }),
+    ChatLog.countDocuments({ ownerId, status: "error" }),
+  ]);
+  const totalFeedback = helpful + notHelpful;
+  return sendSuccess(res, {
+    intents,
+    projects,
+    providers,
+    failedSearches: failed,
+    helpful,
+    notHelpful,
+    helpfulPercentage: totalFeedback ? Math.round((helpful / totalFeedback) * 100) : 0,
+    notHelpfulPercentage: totalFeedback ? Math.round((notHelpful / totalFeedback) * 100) : 0,
   });
 }
 

@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "seed": "node src/seed/seed.js",
     "seed:production": "node src/seed/seedProduction.js",
+    "seed:portfolio": "node src/seed/seedProduction.js",
     "test:ai": "node src/services/openRouterService.test.js",
     "check": "node --check src/server.js"
   },

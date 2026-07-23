@@ -33,6 +33,7 @@ export default function Analytics() {
     devices: [],
     browsers: [],
     engagement: {},
+    ai: {},
   });
   const [error, setError] = useState("");
 
@@ -48,8 +49,9 @@ export default function Analytics() {
       api("/analytics/devices"),
       api("/analytics/browsers"),
       api(`/analytics/engagement?days=${days}`),
-    ]).then(([overview, traffic, weekly, monthly, pages, projects, referrers, devices, browsers, engagement]) =>
-      setData({ overview, traffic, weekly, monthly, pages, projects, referrers, devices, browsers, engagement })
+      api("/ai/analytics"),
+    ]).then(([overview, traffic, weekly, monthly, pages, projects, referrers, devices, browsers, engagement, ai]) =>
+      setData({ overview, traffic, weekly, monthly, pages, projects, referrers, devices, browsers, engagement, ai })
     )
       .catch((requestError) => setError(requestError.message));
   }, [days]);
@@ -90,6 +92,22 @@ export default function Analytics() {
       <div className="dashboard-grid">
         <TablePanel title="Top project clicks" rows={data.projects} firstLabel="Project" secondLabel="Clicks" empty="No project clicks recorded yet." />
         <TablePanel title="Top referrers" rows={data.referrers} firstLabel="Referrer" secondLabel="Visits" empty="No referrers recorded yet." />
+      </div>
+      <div className="dashboard-grid">
+        <TablePanel title="Most asked Copilot projects" rows={data.ai.projects || []} firstLabel="Project" secondLabel="Questions" empty="No Copilot project questions yet." />
+        <TablePanel title="Most common Copilot intents" rows={data.ai.intents || []} firstLabel="Intent" secondLabel="Questions" empty="No Copilot intent data yet." />
+      </div>
+      <div className="dashboard-grid">
+        <TablePanel title="AI provider usage" rows={data.ai.providers || []} firstLabel="Provider" secondLabel="Uses" empty="No provider usage recorded yet." />
+        <section className="admin-panel">
+          <div className="panel-heading"><div><span>Copilot quality</span><h2>Feedback summary</h2></div></div>
+          <div className="metric-grid mini">
+            <article className="metric-card"><span>Helpful</span><strong>{data.ai.helpful || 0}</strong></article>
+            <article className="metric-card"><span>Not Helpful</span><strong>{data.ai.notHelpful || 0}</strong></article>
+            <article className="metric-card"><span>Helpful %</span><strong>{data.ai.helpfulPercentage || 0}%</strong></article>
+            <article className="metric-card"><span>Failed Responses</span><strong>{data.ai.failedSearches || 0}</strong></article>
+          </div>
+        </section>
       </div>
       <div className="dashboard-grid">
         <DistributionPanel title="Device distribution" rows={data.devices} />

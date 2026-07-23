@@ -55,6 +55,7 @@ export const env = {
   aiMaxQuestionLength: Number(process.env.AI_MAX_QUESTION_LENGTH || 1200),
   aiMaxHistoryItems: Number(process.env.AI_MAX_HISTORY_ITEMS || 10),
   aiChatLoggingEnabled: process.env.AI_CHAT_LOGGING_ENABLED !== "false",
+  viewCountCooldownHours: Number(process.env.VIEW_COUNT_COOLDOWN_HOURS || 24),
   rateLimitWindowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 900000),
   rateLimitMax: Number(process.env.RATE_LIMIT_MAX || 100),
   mediaStorageProvider: process.env.MEDIA_STORAGE_PROVIDER || "local",

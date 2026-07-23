@@ -2,6 +2,7 @@ import { PortfolioItem } from "../models/PortfolioItem.js";
 import { createSlug } from "../utils/slug.js";
 import { createHttpError, sendSuccess } from "../utils/response.js";
 import { recordAdminActivity } from "../services/activityService.js";
+import { clearPortfolioCache } from "../services/portfolioCacheService.js";
 
 function serialize(item) {
   return {
@@ -53,8 +54,9 @@ export function createItem(type) {
       slug: slug || createSlug(title) || `${type}-${Date.now()}`,
       order,
       isVisible,
-      data,
+      data: { ...data, version: Number(data.version || 1), updatedBy: req.user?.username || req.user?.name || "admin" },
     });
+    clearPortfolioCache(req.user._id);
     await recordAdminActivity(req, "create", type, item._id, { title });
     return sendSuccess(res, serialize(item.toObject()), `${type} created`, 201);
   };
@@ -63,7 +65,9 @@ export function createItem(type) {
 export function updateItem(type) {
   return async (req, res) => {
     const { title, slug, order, isVisible, ...data } = req.body;
-    const update = { data };
+    const existing = await PortfolioItem.findOne({ _id: req.params.id, ownerId: req.user._id, type }).lean();
+    if (!existing) throw createHttpError("Item not found", 404);
+    const update = { data: { ...data, version: Number(existing.data?.version || 1) + 1, updatedBy: req.user?.username || req.user?.name || "admin" } };
     if (title !== undefined) update.title = title;
     if (slug !== undefined) update.slug = slug || createSlug(title);
     if (order !== undefined) update.order = order;
@@ -73,7 +77,7 @@ export function updateItem(type) {
       { $set: update },
       { new: true, runValidators: true }
     ).lean();
-    if (!item) throw createHttpError("Item not found", 404);
+    clearPortfolioCache(req.user._id);
     await recordAdminActivity(req, "update", type, item._id, { title: item.title });
     return sendSuccess(res, serialize(item), `${type} updated`);
   };
@@ -83,6 +87,7 @@ export function deleteItem(type) {
   return async (req, res) => {
     const item = await PortfolioItem.findOneAndDelete({ _id: req.params.id, ownerId: req.user._id, type });
     if (!item) throw createHttpError("Item not found", 404);
+    clearPortfolioCache(req.user._id);
     await recordAdminActivity(req, "delete", type, item._id, { title: item.title });
     return sendSuccess(res, null, `${type} deleted`);
   };

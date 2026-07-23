@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { aiHealth, aiLogs, aiSuggestions, chat, deleteAiLog, projectSummary, recruiterSummary } from "../controllers/aiController.js";
+import { aiAnalytics, aiFeedback, aiHealth, aiLogs, aiSuggestions, chat, deleteAiLog, projectSummary, recruiterSummary } from "../controllers/aiController.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/aiRateLimiter.js";
 import { resolveOwner } from "../middleware/owner.js";
@@ -13,7 +13,9 @@ export const aiRoutes = Router();
 aiRoutes.get("/health", asyncHandler(aiHealth));
 aiRoutes.get("/suggestions", asyncHandler(aiSuggestions));
 aiRoutes.post("/chat", aiRateLimiter, resolveOwner, validateBody(validateAiQuestion), sanitizeAiInput, validateAiRequest, asyncHandler(chat));
+aiRoutes.post("/feedback", resolveOwner, asyncHandler(aiFeedback));
 aiRoutes.post("/project-summary", aiRateLimiter, resolveOwner, validateBody(validateAiQuestion), sanitizeAiInput, validateAiRequest, asyncHandler(projectSummary));
 aiRoutes.post("/recruiter-summary", aiRateLimiter, resolveOwner, validateBody(validateAiQuestion), sanitizeAiInput, validateAiRequest, asyncHandler(recruiterSummary));
 aiRoutes.get("/logs", requireAuth, requireAdmin, asyncHandler(aiLogs));
+aiRoutes.get("/analytics", requireAuth, requireAdmin, asyncHandler(aiAnalytics));
 aiRoutes.delete("/logs/:id", requireAuth, requireAdmin, asyncHandler(deleteAiLog));

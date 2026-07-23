@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FaArrowRotateRight, FaBroom, FaMinus, FaPaperPlane, FaRobot, FaXmark } from "react-icons/fa6";
-import { askCopilot, getCopilotSuggestions } from "../../services/aiService";
+import { askCopilot, getCopilotSuggestions, sendCopilotFeedback } from "../../services/aiService";
 
 const FALLBACK_SUGGESTIONS = [
   "Who is the portfolio owner?",
@@ -64,7 +64,13 @@ export default function AiCopilot() {
     const timeout = setTimeout(() => abortRef.current?.abort(), 50000);
     try {
       const response = await askCopilot(clean, next.slice(-10), sessionId, abortRef.current.signal);
-      setMessages((current) => [...current, { role: "assistant", content: response.answer }]);
+      setMessages((current) => [...current, {
+        role: "assistant",
+        content: response.answer,
+        question: clean,
+        intent: response.intent,
+        detectedProjects: response.detectedProjects,
+      }]);
     } catch (error) {
       setMessages((current) => [
         ...current,
@@ -108,7 +114,13 @@ export default function AiCopilot() {
           </header>
           <div className="ai-messages" aria-live="polite">
             {messages.map((message, index) => (
-              <MessageBubble key={`${message.role}-${index}`} message={message} />
+              <MessageBubble
+                key={`${message.role}-${index}`}
+                message={message}
+                sessionId={sessionId}
+                onRetry={() => message.question && send(message.question)}
+                onRefine={(instruction) => message.question && send(`${message.question}\n\n${instruction}`)}
+              />
             ))}
             {loading && <TypingIndicator />}
             <div ref={messagesEndRef} />
@@ -178,10 +190,42 @@ function getFriendlyError(error) {
   return error?.message || "The portfolio assistant is temporarily unavailable. Please try again later.";
 }
 
-function MessageBubble({ message }) {
+function MessageBubble({ message, sessionId, onRetry, onRefine }) {
+  const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const canAct = message.role === "assistant" && message.content !== WELCOME_MESSAGE;
+  const submitFeedback = (helpful) => {
+    setFeedback(helpful ? "helpful" : "not-helpful");
+    sendCopilotFeedback({
+      helpful,
+      question: message.question || "",
+      answer: message.content || "",
+      conversationId: sessionId,
+      intent: message.intent || "",
+      detectedProjects: message.detectedProjects || [],
+    }).catch(() => {});
+  };
+  const copy = () => {
+    navigator.clipboard?.writeText(message.content || "").then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    });
+  };
   return (
-    <div className={`ai-message ${message.role}`}>
-      <FormattedMessage content={message.content} />
+    <div className={`ai-message-wrap ${message.role}`}>
+      <div className={`ai-message ${message.role}`}>
+        <FormattedMessage content={message.content} />
+      </div>
+      {canAct && (
+        <div className="ai-feedback-actions" aria-label="Copilot answer actions">
+          <button type="button" className={feedback === "helpful" ? "active" : ""} onClick={() => submitFeedback(true)}>Helpful</button>
+          <button type="button" className={feedback === "not-helpful" ? "active" : ""} onClick={() => submitFeedback(false)}>Not Helpful</button>
+          {onRefine && <button type="button" onClick={() => onRefine("Make the previous answer shorter and keep only the most important points.")}>Make Shorter</button>}
+          {onRefine && <button type="button" onClick={() => onRefine("Explain the previous answer in more detail with clear headings.")}>Explain More</button>}
+          <button type="button" onClick={copy}>{copied ? "Copied" : "Copy"}</button>
+          {onRetry && <button type="button" onClick={onRetry}>Retry</button>}
+        </div>
+      )}
     </div>
   );
 }

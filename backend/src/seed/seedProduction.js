@@ -258,8 +258,37 @@ function toItem(type, entry, order) {
   };
 }
 
+const projectAliases = {
+  "meeting-agent": ["Meeting Agent", "Meeting-to-Execution", "AI Meeting Agent"],
+  mindcare: ["Depression Assessment", "Mental Wellness", "Mental Health Project"],
+  reconiq: ["Reconciliation Project", "Finance Project", "Fraud Detection Project"],
+  quickdine: ["Restaurant Project", "Food Booking", "Restaurant AI"],
+  "personal-portfolio": ["Portfolio", "Personal Website", "Nagoor Portfolio", "Premium Portfolio"],
+  "timetable-generation": ["Timetable Generator", "Scheduling Project"],
+  "symbol-table-analyzer": ["Symbol Table", "Compiler Project"],
+  mediclaim: ["MediClaim", "Medical Claim Project", "Insurance Claim AI"],
+  "prepiq-ai": ["Placement Platform", "Exam Preparation Platform"],
+  "house-price": ["Property Prediction", "Real Estate AI", "House Price"],
+  "portfolio-builder": ["Portfolio Builder", "AI Website Builder", "PortfolioAI"],
+  nova: ["Voice Assistant", "Personal Assistant", "Nagoor Assistant"],
+  "ats-resume-checker": ["Resume Checker", "ATS Resume Project", "ATS Checker"],
+  "breachchecker": ["Breach Checker", "BreachGuard", "Email Breach Project"],
+};
+
 function projectToItem(project, order) {
   const slug = project.slug || project.id || createSlug(project.title);
+  const visibleInitially = (
+    (project.statusGroup === "completed" && order < 4) ||
+    (project.statusGroup === "current" && order < 10) ||
+    project.statusGroup === "upcoming"
+  );
+  const keywords = [...new Set([
+    project.title,
+    slug,
+    ...(project.categories || []),
+    ...(project.technologies || []),
+    ...(projectAliases[slug] || []),
+  ].filter(Boolean))];
   return {
     type: "project",
     title: project.title,
@@ -269,6 +298,17 @@ function projectToItem(project, order) {
     data: {
       ...project,
       slug,
+      aliases: project.aliases || projectAliases[slug] || [],
+      status: project.statusLabel,
+      shortDescription: project.description,
+      githubUrl: project.github,
+      demoUrl: project.live,
+      imageAlt: `${project.title} preview`,
+      visibleInitially,
+      displayOrder: order + 1,
+      keywords,
+      version: Number(project.version || 1),
+      updatedBy: "production-seed",
       copilotCoverage: {
         sections: ["overview", "features", "technology", "algorithms", "workflow", "architecture", "challenges", "roadmap"],
         star: project.analysis?.star || [],

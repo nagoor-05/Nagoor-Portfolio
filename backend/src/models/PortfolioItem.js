@@ -20,4 +20,11 @@ const portfolioItemSchema = new mongoose.Schema(
 
 portfolioItemSchema.index({ ownerId: 1, type: 1, slug: 1 }, { unique: true, sparse: true });
 portfolioItemSchema.index({ ownerId: 1, type: 1, order: 1 });
+portfolioItemSchema.index({ ownerId: 1, type: 1, title: 1 });
+portfolioItemSchema.index({ ownerId: 1, type: 1, "data.aliases": 1 });
+portfolioItemSchema.index({ ownerId: 1, type: 1, "data.status": 1 });
+portfolioItemSchema.index({ ownerId: 1, type: 1, "data.statusGroup": 1 });
+portfolioItemSchema.index({ ownerId: 1, type: 1, "data.categories": 1 });
+portfolioItemSchema.index({ ownerId: 1, type: 1, "data.technologies": 1 });
+portfolioItemSchema.index({ ownerId: 1, type: 1, "data.keywords": 1 });
 export const PortfolioItem = mongoose.model("PortfolioItem", portfolioItemSchema);

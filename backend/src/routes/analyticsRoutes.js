@@ -6,6 +6,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const analyticsRoutes = Router();
 analyticsRoutes.post("/track", resolveOwner, asyncHandler(analytics.track));
+analyticsRoutes.get("/views", resolveOwner, asyncHandler(analytics.getViews));
+analyticsRoutes.post("/views", resolveOwner, asyncHandler(analytics.recordView));
 analyticsRoutes.use(requireAuth, requireAdmin);
 analyticsRoutes.get("/overview", asyncHandler(analytics.overview));
 analyticsRoutes.get("/traffic", asyncHandler(analytics.traffic));

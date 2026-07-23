@@ -1,6 +1,8 @@
 import { AnalyticsEvent } from "../models/AnalyticsEvent.js";
+import { PortfolioSetting } from "../models/PortfolioSetting.js";
 import { getClientInfo } from "../utils/clientInfo.js";
 import { sendSuccess } from "../utils/response.js";
+import { env } from "../config/env.js";
 
 export async function track(req, res) {
   const {
@@ -29,6 +31,47 @@ export async function track(req, res) {
     ...client,
   });
   return sendSuccess(res, { id: event._id }, "Event tracked", 201);
+}
+
+export async function getViews(req, res) {
+  const setting = await PortfolioSetting.findOne({ ownerId: req.owner._id, key: "portfolioViews" }).lean();
+  return sendSuccess(res, { views: Number(setting?.value?.count || 501) });
+}
+
+export async function recordView(req, res) {
+  const visitorId = String(req.body?.visitorId || "").slice(0, 120);
+  if (!visitorId) return res.status(400).json({ success: false, message: "visitorId is required" });
+  const cooldownHours = Number(process.env.VIEW_COUNT_COOLDOWN_HOURS || env.viewCountCooldownHours || 24);
+  const since = new Date(Date.now() - cooldownHours * 60 * 60 * 1000);
+  const recent = await AnalyticsEvent.findOne({
+    ownerId: req.owner._id,
+    eventType: "portfolio_view",
+    visitorId,
+    createdAt: { $gte: since },
+  }).lean();
+  if (!recent) {
+    await AnalyticsEvent.create({
+      ownerId: req.owner._id,
+      eventType: "portfolio_view",
+      page: "home",
+      visitorId,
+      sessionId: String(req.body?.sessionId || ""),
+      metadata: { counted: true },
+      ...getClientInfo(req),
+    });
+    await PortfolioSetting.findOneAndUpdate(
+      { ownerId: req.owner._id, key: "portfolioViews" },
+      { $setOnInsert: { value: { base: 501, count: 501 } } },
+      { upsert: true, new: true }
+    );
+    await PortfolioSetting.findOneAndUpdate(
+      { ownerId: req.owner._id, key: "portfolioViews" },
+      { $inc: { "value.count": 1 } },
+      { new: true }
+    );
+  }
+  const setting = await PortfolioSetting.findOne({ ownerId: req.owner._id, key: "portfolioViews" }).lean();
+  return sendSuccess(res, { views: Number(setting?.value?.count || 501), counted: !recent });
 }
 
 async function groupBy(ownerId, field, match = {}) {

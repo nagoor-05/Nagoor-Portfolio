@@ -1,4 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "/api" : "http://127.0.0.1:5001/api");
+const localApiUrl = "http://127.0.0.1:5001/api";
+const productionApiUrl = "https://nagoor-portfolio-api.vercel.app/api";
+const API_URL = import.meta.env.PROD
+  ? productionApiUrl
+  : (import.meta.env.VITE_API_URL || localApiUrl);
 const USERNAME = import.meta.env.VITE_PORTFOLIO_USERNAME || "nagoor";
 
 export async function apiRequest(path, options = {}) {

@@ -39,6 +39,15 @@ export async function getCopilotSuggestions() {
   return payload.suggestions || payload.data?.suggestions || [];
 }
 
+export async function sendCopilotFeedback(feedback) {
+  const payload = await requestJson(`${API_URL}/ai/feedback?username=${USERNAME}`, {
+    method: "POST",
+    timeoutMs: 12000,
+    body: JSON.stringify(feedback),
+  });
+  return payload.data || payload;
+}
+
 async function requestJson(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(new DOMException("Request timed out", "TimeoutError")), options.timeoutMs || COPILOT_TIMEOUT_MS);

@@ -26,6 +26,14 @@ function getSessionId() {
   return value;
 }
 
+export function getCurrentVisitorId() {
+  return getVisitorId();
+}
+
+export function getCurrentSessionId() {
+  return getSessionId();
+}
+
 function buildPayload(eventType, details = {}) {
   return {
     eventType,
@@ -76,4 +84,20 @@ export function trackSessionEnd(page, scrollDepth = 0) {
 
 export function trackScrollDepth(page, scrollDepth) {
   return trackEvent("scroll_depth", { page, scrollDepth });
+}
+
+export async function recordPortfolioView() {
+  const result = await apiRequest(`/analytics/views?username=${USERNAME}`, {
+    method: "POST",
+    body: JSON.stringify({
+      visitorId: getVisitorId(),
+      sessionId: getSessionId(),
+    }),
+  });
+  return result?.data || result;
+}
+
+export async function getPortfolioViews() {
+  const result = await apiRequest(`/analytics/views?username=${USERNAME}`, { method: "GET" });
+  return result?.data || result;
 }
