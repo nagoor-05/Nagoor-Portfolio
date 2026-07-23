@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import ParticlesLayer from "./ParticlesLayer";
 
 const bootSteps = [
-  ["boot", "Initializing portfolio..."],
+  ["boot", "Initializing..."],
   ["core", "Loading contents..."],
   ["ui", "Loading sections..."],
   ["img", "Loading images..."],
@@ -35,14 +35,20 @@ export default function Preloader({ onDone }) {
   return (
     <motion.div className="preloader" exit={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <ParticlesLayer />
+      <div className="preloader-keywords" aria-hidden="true">
+        <span>Developer Apps</span>
+        <span>Web Apps</span>
+        <span>React</span>
+        <span>Python</span>
+        <span>Database</span>
+        <span>AI</span>
+        <span>Design</span>
+      </div>
       <div className="preloader-blur" />
       <div className="preloader-card">
         <div className="preloader-logo" aria-hidden="true">N</div>
-        <p className="preloader-kicker">Mohammed Nagoor Meerasha</p>
-        <h1>
-          Portfolio <span>AI</span>
-        </h1>
-        <p className="preloader-subtitle">Personal developer portfolio and AI copilot experience</p>
+        <h1>Mohammed Nagoor Meerasha</h1>
+        <p className="preloader-subtitle">{progress >= 100 ? "Ready" : "Loading"}</p>
 
         <div className="loader-terminal" aria-live="polite">
           {bootSteps.map(([tag, label], index) => (

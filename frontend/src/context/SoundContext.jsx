@@ -25,6 +25,7 @@ function readStoredVolume() {
 export function SoundProvider({ children }) {
   const audioRef = useRef(null);
   const pendingPlayRef = useRef(false);
+  const userWantedAudioRef = useRef(readStoredEnabled());
   const [volume, setVolumeState] = useState(readStoredVolume);
   const [isMuted, setIsMuted] = useState(() => !readStoredEnabled());
   const [isPlaying, setIsPlaying] = useState(false);
@@ -35,17 +36,33 @@ export function SoundProvider({ children }) {
     audio.volume = volume;
     audio.muted = isMuted;
     audio.preload = "auto";
+    audio.playsInline = true;
     audioRef.current = audio;
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
+    const onEnded = () => {
+      audio.currentTime = 0;
+      if (userWantedAudioRef.current) void audio.play().catch(() => {
+        pendingPlayRef.current = true;
+      });
+    };
+    const onError = () => {
+      pendingPlayRef.current = false;
+      setIsPlaying(false);
+    };
     audio.addEventListener("play", onPlay);
     audio.addEventListener("pause", onPause);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
+    audio.load();
 
     return () => {
       audio.pause();
       audio.removeEventListener("play", onPlay);
       audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
       audioRef.current = null;
     };
   }, []);
@@ -60,7 +77,10 @@ export function SoundProvider({ children }) {
   const playMusic = useCallback(async () => {
     const audio = audioRef.current;
     if (!audio) return false;
+    userWantedAudioRef.current = true;
+    pendingPlayRef.current = true;
     audio.muted = false;
+    audio.volume = volume;
     try {
       await audio.play();
       pendingPlayRef.current = false;
@@ -73,11 +93,12 @@ export function SoundProvider({ children }) {
       setIsPlaying(false);
       return false;
     }
-  }, []);
+  }, [volume]);
 
   const pauseMusic = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    userWantedAudioRef.current = false;
     audio.pause();
     setIsPlaying(false);
     setIsMuted(true);
@@ -107,7 +128,7 @@ export function SoundProvider({ children }) {
     if (!readStoredEnabled()) return undefined;
     pendingPlayRef.current = true;
     const resumeOnInteraction = () => {
-      if (pendingPlayRef.current) playMusic();
+      if (pendingPlayRef.current || userWantedAudioRef.current) void playMusic();
     };
     window.addEventListener("pointerdown", resumeOnInteraction, { once: true });
     window.addEventListener("keydown", resumeOnInteraction, { once: true });

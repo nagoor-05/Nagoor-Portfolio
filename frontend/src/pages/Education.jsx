@@ -22,6 +22,8 @@ import {
 } from "react-icons/fa6";
 import GlassCard from "../components/GlassCard";
 import { usePortfolio } from "../context/PortfolioContext";
+import keinsLogo from "../assets/keins-school-logo.png";
+import psgLogo from "../assets/logos/psg-itech.png";
 
 const EDUCATION_DOCUMENT_PASSWORD = "Nagoor@2005";
 
@@ -29,9 +31,10 @@ const summaryCards = [
   {
     title: "Higher Secondary Education",
     period: "2022-2023",
-    meta: ["Tamil Nadu Higher Secondary Education", "555 / 600 - 92.5%"],
+    meta: ["Keins Matric Higher Secondary School", "555 / 600 - 92.5%"],
     description: "Completed higher secondary education with a strong academic foundation in mathematics, science, and problem-solving.",
     icon: FaGraduationCap,
+    logo: keinsLogo,
   },
   {
     title: "B.E. Computer Science and Engineering",
@@ -39,13 +42,15 @@ const summaryCards = [
     meta: ["PSG Institute of Technology and Applied Research", "Neelambur, Coimbatore", "Final-Year Student"],
     description: "Building a strong foundation in programming, software engineering, artificial intelligence, databases, computer networks, and real-world project development.",
     icon: FaLandmark,
+    logo: psgLogo,
   },
   {
-    title: "Current Learning Focus",
+    title: "Current Internship",
     period: "2026-Present",
-    meta: ["Agentic AI - Machine Learning - Full-Stack Development - Data Structures & Algorithms - Intelligent Automation"],
-    description: "Currently strengthening software engineering fundamentals and building production-ready intelligent applications.",
+    meta: ["SynecX AI Labs", "AI/ML Intern", "Agentic AI - Automation - Practical AI Workflows"],
+    description: "Currently gaining practical exposure to AI workflows, intelligent automation, API integration, and real-world software development.",
     icon: FaLaptopCode,
+    logoText: "SX",
   },
 ];
 
@@ -133,9 +138,11 @@ export default function Education() {
       </header>
 
       <div className="education-summary-grid">
-        {summaryCards.map(({ title, period, meta, description, icon: Icon }) => (
+        {summaryCards.map(({ title, period, meta, description, icon: Icon, logo, logoText }) => (
           <GlassCard key={title} className="education-summary-card">
-            <Icon aria-hidden="true" />
+            <div className="education-summary-logo" aria-hidden="true">
+              {logo ? <img src={logo} alt="" /> : logoText ? <strong>{logoText}</strong> : <Icon />}
+            </div>
             <span>{period}</span>
             <h2>{title}</h2>
             {meta.map((item) => <strong key={item}>{item}</strong>)}

@@ -15,7 +15,7 @@ import { recordPortfolioView, trackEvent } from "../services/analyticsService";
 export default function Home() {
   const { data } = usePortfolio();
   const { hero, socialLinks } = data;
-  const resumeUrl = "/resume/nagoor_3.pdf";
+  const resumeUrl = "/resume/General_Resume.pdf";
   const [viewCount, setViewCount] = useState(hero.viewCount || 501);
   const typed = useTypewriter(hero.roles);
 
@@ -27,17 +27,22 @@ export default function Home() {
       const next = Number.isFinite(stored) && stored > 0 ? stored + 1 : fallbackBase + 1;
       localStorage.setItem("nagoor-local-view-count", String(next));
       setViewCount(next);
+      return next;
     };
+    const localViews = increaseLocalViewCount();
     recordPortfolioView()
       .then((result) => {
         if (cancelled) return;
         const apiViews = result?.views ?? result?.data?.views ?? result?.count ?? result?.data?.count;
         const nextViews = Number(apiViews);
-        if (Number.isFinite(nextViews) && nextViews > 0) setViewCount(nextViews);
-        else increaseLocalViewCount();
+        if (Number.isFinite(nextViews) && nextViews > 0) {
+          const safeViews = Math.max(nextViews, localViews);
+          localStorage.setItem("nagoor-local-view-count", String(safeViews));
+          setViewCount(safeViews);
+        }
       })
       .catch(() => {
-        if (!cancelled) increaseLocalViewCount();
+        if (!cancelled) setViewCount(localViews);
       });
     return () => {
       cancelled = true;

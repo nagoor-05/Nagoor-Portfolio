@@ -59,7 +59,7 @@ Closing Statement: I am still learning, experimenting, and improving every day. 
     title: "Resume Overview",
     description:
       "A summary of my education, skills, experience, and project-building journey. Download my complete resume for more details.",
-    pdfUrl: "/resume/nagoor_3.pdf",
+      pdfUrl: "/resume/General_Resume.pdf",
     coreSkills: ["Java", "C++", "Python", "React", "Tailwind CSS", "Three.js", "Framer Motion", "Machine Learning", "Git", "GitHub", "Problem Solving", "Data Structures"],
   },
   contact: {
