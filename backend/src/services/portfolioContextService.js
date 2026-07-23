@@ -1,4 +1,5 @@
 import { getPortfolio } from "./portfolioService.js";
+import { copilotProjectKnowledge } from "../data/copilotProjectKnowledge.js";
 
 const ALLOWED_KEYS = [
   "owner",
@@ -36,5 +37,6 @@ export async function buildApprovedPortfolioContext(username = "nagoor") {
   for (const key of ALLOWED_KEYS) {
     if (portfolio[key] !== undefined) approved[key] = removePrivateFields(portfolio[key]);
   }
+  approved.projectKnowledge = copilotProjectKnowledge;
   return approved;
 }
