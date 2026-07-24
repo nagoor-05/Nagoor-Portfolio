@@ -8239,4 +8239,338 @@ button {
   }
 }
 
+/* Cyberpunk About Section (Task 6) */
+.cyberpunk-about-page {
+  position: relative;
+  padding-top: clamp(80px, 12vh, 120px);
+  padding-bottom: 80px;
+  overflow: hidden;
+}
+
+.cyber-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.purple-wave-bg {
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  width: 65vw;
+  height: 65vw;
+  max-width: 800px;
+  max-height: 800px;
+  background: radial-gradient(
+    circle,
+    rgba(147, 51, 234, 0.28) 0%,
+    rgba(34, 211, 238, 0.12) 40%,
+    transparent 70%
+  );
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cyber-about-header {
+  position: relative;
+  z-index: 1;
+  margin-bottom: clamp(24px, 4vh, 40px);
+}
+
+.cyber-section-tag {
+  color: #22d3ee;
+  font-family: monospace;
+  font-size: clamp(0.85rem, 1.5vw, 1.05rem);
+  letter-spacing: 0.18em;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.cyber-about-title {
+  font-family: serif, sans-serif;
+  font-size: clamp(3.2rem, 7.5vw, 6rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.cyber-cursor {
+  color: #22d3ee;
+  text-shadow: 0 0 16px rgba(34, 211, 238, 0.8);
+}
+
+.cyber-about-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: clamp(20px, 3vw, 36px);
+  max-width: 1200px;
+}
+
+.cyber-profile-card {
+  position: relative;
+  padding: 20px;
+  border-radius: 18px;
+  background: linear-gradient(
+    160deg,
+    rgba(8, 12, 30, 0.88),
+    rgba(6, 18, 36, 0.82)
+  );
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 24px rgba(34, 211, 238, 0.04);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cyber-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: #22d3ee;
+  border-style: solid;
+  pointer-events: none;
+}
+
+.corner-tl {
+  top: -2px;
+  left: -2px;
+  border-width: 2px 0 0 2px;
+}
+.corner-tr {
+  top: -2px;
+  right: -2px;
+  border-width: 2px 2px 0 0;
+}
+.corner-bl {
+  bottom: -2px;
+  left: -2px;
+  border-width: 0 0 2px 2px;
+}
+.corner-br {
+  bottom: -2px;
+  right: -2px;
+  border-width: 0 2px 2px 0;
+}
+
+.cyber-profile-img-frame {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #050914;
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  margin-bottom: 20px;
+}
+
+.cyber-profile-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.cyber-profile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cyber-handle {
+  color: #22d3ee;
+  font-family: monospace;
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  font-weight: 700;
+  margin: 0;
+}
+
+.cyber-fullname {
+  color: #ffffff;
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  font-weight: 600;
+}
+
+.cyber-role {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: clamp(0.85rem, 1.4vw, 1rem);
+  margin: 0;
+}
+
+.cyber-content-column {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 2.5vw, 28px);
+}
+
+.cyber-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(16px, 2vw, 24px);
+}
+
+.cyber-panel {
+  padding: clamp(18px, 2.2vw, 26px);
+  border-radius: 18px;
+  background: linear-gradient(
+    145deg,
+    rgba(9, 14, 34, 0.82),
+    rgba(7, 12, 28, 0.78)
+  );
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35), inset 0 0 20px rgba(34, 211, 238, 0.03);
+  backdrop-filter: blur(10px);
+}
+
+.cyber-panel-tag {
+  color: #22d3ee;
+  font-family: monospace;
+  font-size: clamp(0.8rem, 1.3vw, 0.95rem);
+  letter-spacing: 0.12em;
+  margin: 0 0 16px;
+}
+
+.cyber-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cyber-chip {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  color: #e2e8f0;
+  font-family: monospace;
+  font-size: clamp(0.8rem, 1.3vw, 0.95rem);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.25s ease;
+}
+
+.cyber-chip:hover {
+  border-color: #a855f7;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.4);
+}
+
+.cyber-panel-philosophy {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.philosophy-text-content {
+  flex: 1;
+}
+
+.philosophy-heading {
+  font-size: clamp(1.2rem, 2.2vw, 1.7rem);
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+.philosophy-description {
+  color: rgba(245, 247, 255, 0.82);
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.philosophy-visual {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.brain-orbit-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px dashed rgba(34, 211, 238, 0.5);
+  border-radius: 50%;
+  animation: onboardingOrbit 18s linear infinite;
+}
+
+.brain-icon-glow {
+  color: #c084fc;
+  font-size: 3.2rem;
+  filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.8));
+}
+
+.cyber-panel-currently {
+  display: flex;
+  flex-direction: column;
+}
+
+.currently-terminal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: monospace;
+}
+
+.currently-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+}
+
+.currently-key {
+  color: #22d3ee;
+  font-weight: 700;
+  min-width: 75px;
+}
+
+.currently-val {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+@media (max-width: 980px) {
+  .cyber-about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cyber-profile-card {
+    max-width: 440px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .cyber-top-row {
+    grid-template-columns: 1fr;
+  }
+
+  .cyber-panel-philosophy {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .philosophy-visual {
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .currently-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+
 
