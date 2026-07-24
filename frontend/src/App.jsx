@@ -22,8 +22,17 @@ const ArticleDetail = lazy(() => import("./pages/ArticleDetail"));
 const Resume = lazy(() => import("./pages/Resume"));
 const Contact = lazy(() => import("./pages/Contact"));
 
+const ONBOARDING_COMPLETED_KEY = "portfolioOnboardingCompleted";
+
+function hasCompletedOnboarding() {
+  return (
+    typeof window !== "undefined" &&
+    window.sessionStorage.getItem(ONBOARDING_COMPLETED_KEY) === "true"
+  );
+}
+
 export default function App() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !hasCompletedOnboarding());
   const navigate = useNavigate();
   const location = useLocation();
   const { data } = usePortfolio();
@@ -35,8 +44,11 @@ export default function App() {
   }, [data.seo, location.pathname]);
 
   const enterPortfolio = async () => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
+    }
     await playMusic();
-    setTimeout(() => navigate("/home"), 520);
+    setTimeout(() => navigate("/home", { replace: true }), 520);
   };
 
   const finishLoading = () => {
@@ -49,6 +61,7 @@ export default function App() {
   if (loading) return <Preloader onDone={finishLoading} />;
 
   if (["/", "/landing"].includes(location.pathname)) {
+    if (hasCompletedOnboarding()) return <Navigate to="/home" replace />;
     return <Landing onEnter={enterPortfolio} />;
   }
 
