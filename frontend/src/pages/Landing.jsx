@@ -109,7 +109,7 @@ const slides = [
   },
 ];
 
-export default function Landing({ onEnter }) {
+export default function Landing({ onFinishOnboarding }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const { playMusic } = useSound();
   const slide = slides[activeSlide];
@@ -142,17 +142,18 @@ export default function Landing({ onEnter }) {
         return;
       }
 
-      onEnter?.();
+      onFinishOnboarding?.();
     }, SLIDE_DURATION);
 
     return () => window.clearTimeout(timer);
-  }, [activeSlide, onEnter]);
+  }, [activeSlide, onFinishOnboarding]);
 
   // Dev reset helper
   useEffect(() => {
     if (!import.meta.env.DEV) return undefined;
     window.resetPortfolioOnboarding = () => {
       window.sessionStorage.removeItem("portfolioOnboardingCompleted");
+      window.sessionStorage.removeItem("portfolioEntryCompleted");
     };
     return () => {
       delete window.resetPortfolioOnboarding;

@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import Layout from "./components/Layout";
 import Preloader from "./components/Preloader";
 import Landing from "./pages/Landing";
+import PortfolioEntryScreen from "./pages/PortfolioEntryScreen";
 import AiCopilot from "./components/ai/AiCopilot";
 import { usePortfolio } from "./context/PortfolioContext";
 import { useSound } from "./context/SoundContext";
@@ -23,6 +24,7 @@ const Resume = lazy(() => import("./pages/Resume"));
 const Contact = lazy(() => import("./pages/Contact"));
 
 const ONBOARDING_COMPLETED_KEY = "portfolioOnboardingCompleted";
+const ENTRY_COMPLETED_KEY = "portfolioEntryCompleted";
 
 function hasCompletedOnboarding() {
   return (
@@ -31,8 +33,17 @@ function hasCompletedOnboarding() {
   );
 }
 
+function hasCompletedEntry() {
+  return (
+    typeof window !== "undefined" &&
+    window.sessionStorage.getItem(ENTRY_COMPLETED_KEY) === "true"
+  );
+}
+
 export default function App() {
   const [loading, setLoading] = useState(() => !hasCompletedOnboarding());
+  const [showLanding, setShowLanding] = useState(false);
+  const [showEntryScreen, setShowEntryScreen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { data } = usePortfolio();
@@ -43,16 +54,30 @@ export default function App() {
     applySeo(data.seo, location.pathname);
   }, [data.seo, location.pathname]);
 
+  const finishOnboarding = () => {
+    setShowLanding(false);
+    setShowEntryScreen(true);
+  };
+
   const enterPortfolio = async () => {
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
+      window.sessionStorage.setItem(ENTRY_COMPLETED_KEY, "true");
     }
+    setShowLanding(false);
+    setShowEntryScreen(false);
     await playMusic();
     setTimeout(() => navigate("/home", { replace: true }), 520);
   };
 
   const finishLoading = () => {
     setLoading(false);
+    if (hasCompletedEntry()) {
+      setShowLanding(false);
+      setShowEntryScreen(false);
+      return;
+    }
+    setShowLanding(true);
     if (!["/", "/landing"].includes(location.pathname)) {
       navigate("/landing", { replace: true });
     }
@@ -61,8 +86,19 @@ export default function App() {
   if (loading) return <Preloader onDone={finishLoading} />;
 
   if (["/", "/landing"].includes(location.pathname)) {
-    if (hasCompletedOnboarding()) return <Navigate to="/home" replace />;
-    return <Landing onEnter={enterPortfolio} />;
+    if (!hasCompletedOnboarding()) {
+      return <Landing onFinishOnboarding={finishOnboarding} />;
+    }
+
+    if (!hasCompletedEntry()) {
+      return <PortfolioEntryScreen onEnter={enterPortfolio} />;
+    }
+
+    return <Navigate to="/home" replace />;
+  }
+
+  if (showEntryScreen) {
+    return <PortfolioEntryScreen onEnter={enterPortfolio} />;
   }
 
   if (data.unpublished) {
@@ -81,7 +117,7 @@ export default function App() {
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/" element={<Navigate to="/landing" replace />} />
-          <Route path="/landing" element={<Landing onEnter={enterPortfolio} />} />
+          <Route path="/landing" element={<Landing onFinishOnboarding={finishOnboarding} />} />
           <Route path="/home" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/education" element={<Education />} />
