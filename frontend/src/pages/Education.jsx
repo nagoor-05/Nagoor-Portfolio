@@ -3,6 +3,8 @@ import keinsLogo from "../assets/keins-school-logo.png";
 import psgLogo from "../assets/logos/psg-itech.png";
 import synecxLogo from "../assets/logos/synecx-ai-labs.png";
 import tnGovtLogo from "../assets/logos/tamilnadu-govt.png";
+import redhatLogo from "../assets/logos/redhat.png";
+import oracleLogo from "../assets/logos/oracle-certified.jpg";
 
 const educationCards = [
   {
@@ -51,6 +53,31 @@ const educationCards = [
   },
 ];
 
+const professionalCertificates = [
+  {
+    title: "Red Hat System Administrator (RHCSA) Course",
+    year: "2025",
+    issuer: "PSG iTech",
+    description:
+      "Completed Linux system administration training with focus on users, permissions, networking, and services.",
+    logo: redhatLogo,
+    logoAlt: "Red Hat Logo",
+    viewUrl: "/documents/certificates/redhat-certificate.png",
+    downloadUrl: "/documents/certificates/redhat-certificate.png",
+  },
+  {
+    title: "Oracle Cloud Infrastructure Foundations Associate",
+    year: "2025",
+    issuer: "Oracle",
+    description:
+      "Recognized for Oracle Cloud Infrastructure foundations covering core services, storage, networking, and security concepts.",
+    logo: oracleLogo,
+    logoAlt: "Oracle Certification Logo",
+    viewUrl: "/documents/certificates/oracle-certificate.png",
+    downloadUrl: "/documents/certificates/oracle-certificate.png",
+  },
+];
+
 export default function Education() {
   return (
     <section className="shell page-pad education-page-v3">
@@ -84,6 +111,42 @@ export default function Education() {
           )
         )}
       </div>
+
+      <section className="professional-certificates-section">
+        <header className="professional-certificates-header">
+          <span className="education-kicker">[03] // PROFESSIONAL_CERTIFICATES</span>
+          <h2>Professional Certificates</h2>
+        </header>
+
+        <div className="professional-certificates-grid">
+          {professionalCertificates.map(({ title, year, issuer, description, logo, logoAlt, viewUrl, downloadUrl }) => (
+            <GlassCard key={title} className="professional-certificate-card">
+              <div className="professional-certificate-top">
+                <div className="professional-certificate-logo-frame">
+                  <img src={logo} alt={logoAlt} className="professional-certificate-logo" />
+                </div>
+                <div className="professional-certificate-copy">
+                  <h3>{title}</h3>
+                  <div className="professional-certificate-meta">
+                    <span>{year}</span>
+                    <span>{issuer}</span>
+                  </div>
+                  <p>{description}</p>
+                </div>
+              </div>
+
+              <div className="professional-certificate-actions">
+                <a href={viewUrl} target="_blank" rel="noopener noreferrer" className="professional-certificate-link">
+                  View Certificate
+                </a>
+                <a href={downloadUrl} download className="professional-certificate-link secondary">
+                  Download Certificate
+                </a>
+              </div>
+            </GlassCard>
+          ))}
+        </div>
+      </section>
     </section>
   );
 }
