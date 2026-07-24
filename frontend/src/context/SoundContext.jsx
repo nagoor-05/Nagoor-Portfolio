@@ -42,10 +42,10 @@ function isAudible(audio) {
 export function SoundProvider({ children }) {
   const audioRef = useRef(null);
   const userWantedAudioRef = useRef(readStoredEnabled());
-  const pendingPlayRef = useRef(userWantedAudioRef.current);
-  const hasUserInteractionRef = useRef(false);
+  const unlockedRef = useRef(false);
+
   const [volume, setVolumeState] = useState(readStoredVolume);
-  const [isMuted, setIsMuted] = useState(() => !readStoredEnabled());
+  const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const syncStateFromAudio = useCallback(() => {
@@ -60,21 +60,27 @@ export function SoundProvider({ children }) {
     if (!audio) return false;
 
     userWantedAudioRef.current = true;
-    pendingPlayRef.current = true;
+    try {
+      localStorage.setItem(ENABLED_KEY, "true");
+    } catch {
+      // Ignore storage errors in private modes
+    }
+
     audio.defaultMuted = false;
     audio.muted = false;
-    audio.volume = Math.max(0.01, volume || DEFAULT_VOLUME);
+    const targetVol = volume > 0 ? volume : DEFAULT_VOLUME;
+    audio.volume = Math.min(1, Math.max(0.01, targetVol));
 
     try {
       await audio.play();
-      pendingPlayRef.current = false;
-      setIsMuted(false);
-      setIsPlaying(isAudible(audio));
-      localStorage.setItem(ENABLED_KEY, "true");
-      localStorage.setItem(VOLUME_KEY, String(audio.volume));
-      return true;
+      const audible = isAudible(audio);
+      setIsPlaying(audible);
+      setIsMuted(!audible);
+      if (audible) {
+        unlockedRef.current = true;
+      }
+      return audible;
     } catch {
-      pendingPlayRef.current = true;
       setIsPlaying(false);
       setIsMuted(true);
       return false;
@@ -83,15 +89,18 @@ export function SoundProvider({ children }) {
 
   const pauseMusic = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio) return;
-
     userWantedAudioRef.current = false;
-    pendingPlayRef.current = false;
+    try {
+      localStorage.setItem(ENABLED_KEY, "false");
+    } catch {
+      // Ignore storage errors in private modes
+    }
+
+    if (!audio) return;
     audio.pause();
     audio.muted = true;
     setIsPlaying(false);
     setIsMuted(true);
-    localStorage.setItem(ENABLED_KEY, "false");
   }, []);
 
   const toggleSound = useCallback(() => {
@@ -107,40 +116,41 @@ export function SoundProvider({ children }) {
 
   const setVolume = useCallback(
     (nextValue) => {
-      const next = Math.min(1, Math.max(0, Number(nextValue) || 0));
-      setVolumeState(next);
-
-      const audio = audioRef.current;
-      if (audio) {
-        audio.volume = next;
-        if (next <= 0) {
-          audio.muted = true;
-        } else if (userWantedAudioRef.current && hasUserInteractionRef.current) {
-          audio.muted = false;
-        }
-        syncStateFromAudio();
+      const parsed = Number(nextValue);
+      const valid = Number.isFinite(parsed)
+        ? Math.min(1, Math.max(0, parsed))
+        : DEFAULT_VOLUME;
+      setVolumeState(valid);
+      try {
+        localStorage.setItem(VOLUME_KEY, String(valid));
+      } catch {
+        // Ignore storage errors
       }
 
-      try {
-        localStorage.setItem(VOLUME_KEY, String(next));
-      } catch {
-        // Storage can be unavailable in private modes.
+      const audio = audioRef.current;
+      if (!audio) return;
+      audio.volume = valid;
+      if (valid <= 0) {
+        audio.muted = true;
+        setIsMuted(true);
+        setIsPlaying(false);
+      } else if (unlockedRef.current && userWantedAudioRef.current) {
+        audio.muted = false;
+        syncStateFromAudio();
       }
     },
     [syncStateFromAudio]
   );
 
+  // Bind audio element lifecycle and state events
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return undefined;
 
     audio.volume = Math.max(0.01, volume || DEFAULT_VOLUME);
-    audio.muted = true;
-    audio.defaultMuted = true;
 
     const handleStateChange = () => syncStateFromAudio();
     const handleError = () => {
-      pendingPlayRef.current = false;
       setIsPlaying(false);
       setIsMuted(true);
     };
@@ -149,33 +159,40 @@ export function SoundProvider({ children }) {
     audio.addEventListener("pause", handleStateChange);
     audio.addEventListener("volumechange", handleStateChange);
     audio.addEventListener("error", handleError);
-    audio.load();
 
     return () => {
       audio.removeEventListener("play", handleStateChange);
       audio.removeEventListener("pause", handleStateChange);
       audio.removeEventListener("volumechange", handleStateChange);
       audio.removeEventListener("error", handleError);
-      audio.pause();
     };
   }, [syncStateFromAudio, volume]);
 
+  // Handle first user interaction unlock listener
   useEffect(() => {
-    const unlockAudio = () => {
-      hasUserInteractionRef.current = true;
-      if (userWantedAudioRef.current || pendingPlayRef.current) {
-        void playMusic();
+    const handleInteraction = async () => {
+      if (unlockedRef.current) return;
+      if (!userWantedAudioRef.current) return;
+
+      const success = await playMusic();
+      if (success) {
+        window.removeEventListener("click", handleInteraction);
+        window.removeEventListener("pointerdown", handleInteraction);
+        window.removeEventListener("touchstart", handleInteraction);
+        window.removeEventListener("keydown", handleInteraction);
       }
     };
 
-    window.addEventListener("pointerdown", unlockAudio, { passive: true });
-    window.addEventListener("touchstart", unlockAudio, { passive: true });
-    window.addEventListener("keydown", unlockAudio);
+    window.addEventListener("click", handleInteraction, { passive: true });
+    window.addEventListener("pointerdown", handleInteraction, { passive: true });
+    window.addEventListener("touchstart", handleInteraction, { passive: true });
+    window.addEventListener("keydown", handleInteraction);
 
     return () => {
-      window.removeEventListener("pointerdown", unlockAudio);
-      window.removeEventListener("touchstart", unlockAudio);
-      window.removeEventListener("keydown", unlockAudio);
+      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("pointerdown", handleInteraction);
+      window.removeEventListener("touchstart", handleInteraction);
+      window.removeEventListener("keydown", handleInteraction);
     };
   }, [playMusic]);
 
@@ -213,3 +230,4 @@ export function useSound() {
   }
   return context;
 }
+
