@@ -34,37 +34,8 @@ export default function App() {
     applySeo(data.seo, location.pathname);
   }, [data.seo, location.pathname]);
 
-  const speakWelcome = () => {
-    if (!("speechSynthesis" in window)) return;
-
-    window.speechSynthesis.cancel();
-    const message = new SpeechSynthesisUtterance(
-      data.landing.voiceMessage
-    );
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice =
-      voices.find((voice) => voice.lang === "en-IN" && /natural|neerja|heera/i.test(voice.name)) ||
-      voices.find((voice) => voice.lang === "en-IN") ||
-      voices.find((voice) => /^en-(GB|US)/.test(voice.lang) && /natural|google|samantha|zira/i.test(voice.name)) ||
-      voices.find((voice) => voice.lang.startsWith("en"));
-
-    if (preferredVoice) message.voice = preferredVoice;
-    message.rate = 0.92;
-    message.pitch = 1;
-    message.volume = 0.9;
-    window.speechSynthesis.speak(message);
-  };
-
   const enterPortfolio = async () => {
     await playMusic();
-    speakWelcome();
-    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-      try {
-        await document.documentElement.requestFullscreen();
-      } catch {
-        // Browsers may deny fullscreen depending on user settings.
-      }
-    }
     setTimeout(() => navigate("/home"), 520);
   };
 
