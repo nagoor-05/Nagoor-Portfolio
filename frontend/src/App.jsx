@@ -1,4 +1,4 @@
-import { lazy, useEffect, useState } from "react";
+import { lazy, useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Layout from "./components/Layout";
@@ -41,64 +41,62 @@ function hasCompletedEntry() {
 }
 
 export default function App() {
-  const [loading, setLoading] = useState(() => !hasCompletedOnboarding());
-  const [showLanding, setShowLanding] = useState(false);
-  const [showEntryScreen, setShowEntryScreen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { data } = usePortfolio();
   const { playMusic } = useSound();
+  const [loading, setLoading] = useState(() => !hasCompletedOnboarding() && !hasCompletedEntry());
+  const onboardingComplete = hasCompletedOnboarding();
+  const entryComplete = hasCompletedEntry();
   usePageTracking();
 
   useEffect(() => {
     applySeo(data.seo, location.pathname);
   }, [data.seo, location.pathname]);
 
-  const finishOnboarding = () => {
-    setShowLanding(false);
-    setShowEntryScreen(true);
-  };
+  const finishOnboarding = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
+    }
+    navigate("/entry");
+  }, [navigate]);
 
-  const enterPortfolio = async () => {
+  const enterPortfolio = useCallback(async () => {
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
       window.sessionStorage.setItem(ENTRY_COMPLETED_KEY, "true");
     }
-    setShowLanding(false);
-    setShowEntryScreen(false);
     await playMusic();
-    setTimeout(() => navigate("/home", { replace: true }), 520);
-  };
+    navigate("/home");
+  }, [navigate, playMusic]);
 
-  const finishLoading = () => {
+  const finishLoading = useCallback(() => {
     setLoading(false);
-    if (hasCompletedEntry()) {
-      setShowLanding(false);
-      setShowEntryScreen(false);
-      return;
-    }
-    setShowLanding(true);
-    if (!["/", "/landing"].includes(location.pathname)) {
-      navigate("/landing", { replace: true });
-    }
-  };
+  }, []);
 
   if (loading) return <Preloader onDone={finishLoading} />;
 
-  if (["/", "/landing"].includes(location.pathname)) {
-    if (!hasCompletedOnboarding()) {
+  if (location.pathname === "/" || location.pathname === "/landing") {
+    if (!onboardingComplete) {
       return <Landing onFinishOnboarding={finishOnboarding} />;
     }
 
-    if (!hasCompletedEntry()) {
-      return <PortfolioEntryScreen onEnter={enterPortfolio} />;
+    if (!entryComplete) {
+      return <Navigate to="/entry" replace />;
     }
 
     return <Navigate to="/home" replace />;
   }
 
-  if (showEntryScreen) {
+  if (location.pathname === "/entry") {
+    if (entryComplete) {
+      return <Navigate to="/home" replace />;
+    }
     return <PortfolioEntryScreen onEnter={enterPortfolio} />;
+  }
+
+  if (location.pathname === "/home" && !entryComplete) {
+    return <Navigate to={onboardingComplete ? "/entry" : "/landing"} replace />;
   }
 
   if (data.unpublished) {
@@ -118,7 +116,14 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/landing" replace />} />
           <Route path="/landing" element={<Landing onFinishOnboarding={finishOnboarding} />} />
-          <Route path="/home" element={<Home />} />
+          <Route
+            path="/entry"
+            element={entryComplete ? <Navigate to="/home" replace /> : <PortfolioEntryScreen onEnter={enterPortfolio} />}
+          />
+          <Route
+            path="/home"
+            element={entryComplete ? <Home /> : <Navigate to={onboardingComplete ? "/entry" : "/landing"} replace />}
+          />
           <Route path="/about" element={<About />} />
           <Route path="/education" element={<Education />} />
           <Route path="/skills" element={<Skills />} />

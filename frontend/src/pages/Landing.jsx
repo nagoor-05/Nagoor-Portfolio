@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   FaBrain,
@@ -110,7 +110,16 @@ const slides = [
 ];
 
 export default function Landing({ onFinishOnboarding }) {
-  const [activeSlide, setActiveSlide] = useState(0);
+  const slideIndexFromStorage = () => {
+    if (typeof window === "undefined") return 0;
+    const stored = window.sessionStorage.getItem("portfolioOnboardingSlide");
+    const parsed = Number(stored);
+    if (Number.isNaN(parsed) || parsed < 0 || parsed >= slides.length) return 0;
+    return parsed;
+  };
+
+  const [activeSlide, setActiveSlide] = useState(slideIndexFromStorage);
+  const skipFinishRef = useRef(false);
   const { playMusic } = useSound();
   const slide = slides[activeSlide];
 
@@ -134,17 +143,34 @@ export default function Landing({ onFinishOnboarding }) {
       );
   }, [playMusic]);
 
+  // Persist current onboarding slide to session storage and avoid stale redirects
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("portfolioOnboardingSlide", String(activeSlide));
+    }
+  }, [activeSlide]);
+
   // Automatic 9-second screen timer logic
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (activeSlide < slides.length - 1) {
-        setActiveSlide((current) => current + 1);
-        return;
-      }
+    let timer = 0;
 
-      onFinishOnboarding?.();
-    }, SLIDE_DURATION);
+    const scheduleSlide = () => {
+      timer = window.setTimeout(() => {
+        setActiveSlide((current) => {
+          if (current < slides.length - 1) {
+            return current + 1;
+          }
 
+          if (!skipFinishRef.current) {
+            skipFinishRef.current = true;
+            onFinishOnboarding?.();
+          }
+          return current;
+        });
+      }, SLIDE_DURATION);
+    };
+
+    scheduleSlide();
     return () => window.clearTimeout(timer);
   }, [activeSlide, onFinishOnboarding]);
 
@@ -247,9 +273,8 @@ function VisitSlide({ slide, logo }) {
 function UniverseSlide({ slide, logo }) {
   return (
     <div
-      className={`universe-slide-body ${
-        slide.kind === "impact" ? "impact-slide-body" : ""
-      }`}
+      className={`universe-slide-body ${slide.kind === "impact" ? "impact-slide-body" : ""
+        }`}
     >
       <div className="universe-col universe-col-left">
         {slide.leftCards.map(({ title, text, icon: Icon }) => (
