@@ -5,7 +5,7 @@ import { usePortfolio } from "../context/PortfolioContext";
 import redhatLogo from "../assets/logos/redhat.png";
 import oracleLogo from "../assets/logos/oracle-certified.jpg";
 import sihLogo from "../assets/logos/sih.jpg";
-import ideaLogo from "../assets/logos/ideathon.webp";
+import ideaLogo from "../assets/logos/ideathon.jpg";
 
 export default function Achievements() {
   const { data } = usePortfolio();
@@ -165,13 +165,24 @@ function CertificationCard({ item }) {
 
 function LogoMark({ type }) {
   const logoMap = { redhat: redhatLogo, oracle: oracleLogo, sih: sihLogo, idea: ideaLogo };
+  const altMap = {
+    redhat: "Red Hat Logo",
+    oracle: "Oracle Certification Logo",
+    sih: "Smart India Hackathon Logo",
+    idea: "Ideathon Logo",
+  };
+
   if (logoMap[type]) {
     return (
-      <div className={`achievement-logo logo-${type}`}>
-        <img src={logoMap[type]} alt={`${type} logo`} />
+      <div className={`achievement-logo-frame logo-${type}`}>
+        <img src={logoMap[type]} alt={altMap[type] || `${type} logo`} className="achievement-logo-img" />
       </div>
     );
   }
-  const labels = { leetcode: "LC" };
-  return <div className={`achievement-logo logo-${type}`}>{labels[type] || "N"}</div>;
+  return (
+    <div className={`achievement-logo-frame logo-${type}`}>
+      <span className="achievement-logo-fallback">LC</span>
+    </div>
+  );
 }
+
