@@ -371,10 +371,10 @@ export const educationCertificates = {
 
 export const achievements = {
   stats: [
-    { label: "Certificates", value: "15+", note: "Earned across domains", icon: FaCertificate },
+    { label: "Certificates", value: "4+", note: "Earned across domains", icon: FaCertificate },
     { label: "Projects", value: "8+", note: "Academic & Personal", icon: FaCode },
     { label: "Hackathons", value: "2", note: "Participated in", icon: FaTrophy },
-    { label: "DSA Problems", value: "100+", note: "Practice milestone", icon: FaFire },
+    { label: "DSA Problems", value: "10+", note: "Practice milestone", icon: FaFire },
   ],
   certifications: [
     {
@@ -401,7 +401,7 @@ export const achievements = {
   coding: {
     title: "LeetCode Coding Milestone",
     provider: "LeetCode",
-    solved: "100+",
+    solved: "10+",
     description: "Actively practicing Data Structures and Algorithms to strengthen problem-solving skills.",
   },
   competitions: [
