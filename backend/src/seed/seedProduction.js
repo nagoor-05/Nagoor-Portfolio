@@ -266,13 +266,13 @@ const projectAliases = {
   "personal-portfolio": ["Portfolio", "Personal Website", "Nagoor Portfolio", "Premium Portfolio"],
   "timetable-generation": ["Timetable Generator", "Scheduling Project"],
   "symbol-table-analyzer": ["Symbol Table", "Compiler Project"],
-  mediclaim: ["MediClaim", "Medical Claim Project", "Insurance Claim AI"],
-  "prepiq-ai": ["Placement Platform", "Exam Preparation Platform"],
-  "house-price": ["Property Prediction", "Real Estate AI", "House Price"],
-  "portfolio-builder": ["Portfolio Builder", "AI Website Builder", "PortfolioAI"],
-  nova: ["Voice Assistant", "Personal Assistant", "Nagoor Assistant"],
+  "mediclaim-ai": ["MediClaim", "Medical Claim Project", "Insurance Claim AI"],
+  "prepiq-ai": ["PrepIQ", "PrepIQ AI", "Placement Platform", "Exam Preparation Platform", "PrepIQ AI — Exam and Placement Intelligence"],
+  "house-price": ["House Price Prediction", "AI House Price Prediction", "Property Prediction", "Real Estate AI", "House Price"],
+  "ai-portfolio-builder": ["Portfolio Builder", "AI Website Builder", "PortfolioAI", "Portiva AI"],
+  "nova-assistant": ["NOVA", "Voice Assistant", "Voice Assistant NOVA", "Nagoor Assistant", "Nagoor’s Own Voice Assistant"],
   "ats-resume-checker": ["Resume Checker", "ATS Resume Project", "ATS Checker"],
-  "breachchecker": ["Breach Checker", "BreachGuard", "Email Breach Project"],
+  "breachguard-ai": ["Breach Checker", "BreachChecker", "BreachGuard", "BreachGuard AI", "Email Breach Project"],
 };
 
 function projectToItem(project, order) {

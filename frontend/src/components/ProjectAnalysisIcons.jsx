@@ -38,11 +38,15 @@ const projectIcons = {
   "SereniQ — Mental Wellness Assessment Platform": HeartPulse,
   "MediClaim AI": FileHeart,
   "PrepIQ AI": GraduationCap,
+  "PrepIQ AI — Exam and Placement Intelligence": GraduationCap,
   "AI House Price Prediction": House,
+  "AI House Price Prediction and Real Estate Intelligence Platform": House,
   "AI Portfolio Builder": PanelsTopLeft,
   NOVA: Mic2,
+  "NOVA — Nagoor’s Own Voice Assistant": Mic2,
   "AI ATS Resume Checker": FileSearch,
   BreachChecker: ShieldCheck,
+  "BreachGuard AI — Email and Password Breach Detection Platform": ShieldCheck,
 };
 
 const sectionIcons = {

@@ -20,7 +20,7 @@ const statusGroups = [
   ["upcoming", "Upcoming Projects", "Planned systems ready for development"],
 ];
 
-const initialVisible = { completed: 3, current: 3, upcoming: 2 };
+const initialVisible = { completed: 3, current: 4, upcoming: 2 };
 const DEFAULT_LIVE_DEMO = "https://nagoor-personal-portfolio.vercel.app/projects";
 const completedProjectOrder = [
   "meeting-agent",
@@ -30,14 +30,50 @@ const completedProjectOrder = [
   "symbol-table-analyzer",
   "ai-timetable-generation",
   "sereniq",
+  "mindcare",
+  "quickdine",
 ];
 const completedProjectSet = new Set(completedProjectOrder);
 const completedProjectRank = new Map(completedProjectOrder.map((slug, index) => [slug, index]));
+const currentProjectOrder = [
+  "mediclaim-ai",
+  "house-price",
+  "prepiq-ai",
+  "nova-assistant",
+];
+const currentProjectSet = new Set(currentProjectOrder);
+const currentProjectRank = new Map(currentProjectOrder.map((slug, index) => [slug, index]));
+const upcomingProjectOrder = [
+  "breachguard-ai",
+  "ats-resume-checker",
+];
+const upcomingProjectSet = new Set(upcomingProjectOrder);
+const upcomingProjectRank = new Map(upcomingProjectOrder.map((slug, index) => [slug, index]));
 const legacyProjectSlugs = new Map([
   ["nagoor-portfolio", "personal-portfolio"],
   ["financial-reconciliation-system", "reconiq"],
   ["mini-compiler-lab", "symbol-table-analyzer"],
   ["ai-learning-notebook", "youtube-learn"],
+  ["house-price-prediction", "house-price"],
+  ["ai-house-price-prediction", "house-price"],
+  ["ai-house-price-prediction-and-real-estate-intelligence-platform", "house-price"],
+  ["voice-assistant-nova", "nova-assistant"],
+  ["nagoor-s-own-voice-assistant", "nova-assistant"],
+  ["nova-nagoor-s-own-voice-assistant", "nova-assistant"],
+  ["prepiq", "prepiq-ai"],
+  ["prepiq-ai-exam-and-placement-intelligence", "prepiq-ai"],
+  ["breach-checker", "breachguard-ai"],
+  ["breachchecker", "breachguard-ai"],
+  ["breachguard", "breachguard-ai"],
+  ["breachguard-ai", "breachguard-ai"],
+  ["breachguard-ai-email-and-password-breach-detection-platform", "breachguard-ai"],
+  ["ats-checker", "ats-resume-checker"],
+  ["ai-ats", "ats-resume-checker"],
+  ["ats-resume-checker", "ats-resume-checker"],
+  ["ai-ats-resume-checker", "ats-resume-checker"],
+  ["portfolioai", "ai-portfolio-builder"],
+  ["portiva-ai", "ai-portfolio-builder"],
+  ["portfolio-builder", "ai-portfolio-builder"],
 ]);
 
 function validUrl(value = "") {
@@ -52,7 +88,7 @@ function toArray(value) {
 
 function normalizeStatus(project) {
   const raw = String(project.statusGroup || project.status || project.statusLabel || "").toLowerCase();
-  if (raw.includes("progress") || raw.includes("current")) return "current";
+  if (raw.includes("progress") || raw.includes("current") || raw.includes("in-progress")) return "current";
   if (raw.includes("upcoming") || raw.includes("planned")) return "upcoming";
   return "completed";
 }
@@ -117,6 +153,7 @@ function normalizeProject(project, index) {
     slug,
     title: merged.title,
     statusGroup,
+    canonicalStatus: statusGroup === "current" ? "in-progress" : statusGroup,
     statusLabel,
     statusNote: merged.statusNote || (statusGroup === "current" ? "Development in progress" : statusGroup === "upcoming" ? "Planned project" : ""),
     progress: Number(merged.progress ?? String(merged.progress || "0").replace("%", "")) || (statusGroup === "completed" ? 90 : statusGroup === "current" ? 40 : 0),
@@ -166,7 +203,7 @@ function projectActions(project) {
     };
   }
 
-  if (title === "SereniQ — Mental Wellness Assessment Platform") {
+  if (project.slug === "sereniq") {
     return {
       github: { enabled: true, href: "https://github.com/nagoor-05/Screening_the_Depression", label: "GitHub" },
       live: upcoming,
@@ -200,10 +237,21 @@ export default function Projects() {
       mergedProjects.set(key, normalizeProject(project, index));
     });
     return [...mergedProjects.values()]
-      .filter((item) => item.statusGroup !== "completed" || completedProjectSet.has(item.slug))
+      .filter((item) => {
+        if (item.statusGroup === "completed") return completedProjectSet.has(item.slug);
+        if (item.statusGroup === "current") return currentProjectSet.has(item.slug);
+        if (item.statusGroup === "upcoming") return upcomingProjectSet.has(item.slug);
+        return false;
+      })
       .sort((a, b) => {
         if (a.statusGroup === "completed" && b.statusGroup === "completed") {
           return (completedProjectRank.get(a.slug) ?? 999) - (completedProjectRank.get(b.slug) ?? 999);
+        }
+        if (a.statusGroup === "current" && b.statusGroup === "current") {
+          return (currentProjectRank.get(a.slug) ?? 999) - (currentProjectRank.get(b.slug) ?? 999);
+        }
+        if (a.statusGroup === "upcoming" && b.statusGroup === "upcoming") {
+          return (upcomingProjectRank.get(a.slug) ?? 999) - (upcomingProjectRank.get(b.slug) ?? 999);
         }
         return a.displayOrder - b.displayOrder;
       });
