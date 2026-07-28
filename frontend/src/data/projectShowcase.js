@@ -347,7 +347,7 @@ export const projects = [
     technologies: ["Python", "Kotlin", "LiveKit", "STT", "LLMs"],
     image: "/projects/nova.png",
     problem: "Users switch between many apps to perform routine tasks, search information, communicate and manage daily activities.",
-    solution: "NOVA uses natural voice commands to understand requests, select tools and assist across desktop and mobile environments.",
+    solution: "Inspired by Iron Man's JARVIS, NOVA uses natural voice commands to understand requests, select tools and assist across desktop and mobile environments.",
     features: ["Wake-word interaction", "Tamil and English commands", "App and website control", "Messaging assistance", "Travel and booking searches", "Find My Phone"],
     techStack: { Desktop: "Python", Android: "Kotlin, Jetpack Compose", Voice: "LiveKit, STT, TTS", AI: "LLM and agent workflows", Integrations: "Apps, browsers and APIs" },
     workflow: ["Wake Word", "Speech Recognition", "Intent Analysis", "Tool Execution", "Voice Confirmation"],

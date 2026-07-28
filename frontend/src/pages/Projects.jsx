@@ -20,7 +20,7 @@ const statusGroups = [
   ["upcoming", "Upcoming Projects", "Planned systems ready for development"],
 ];
 
-const initialVisible = { completed: 3, current: 4, upcoming: 2 };
+const initialVisible = { completed: 3, current: 3, upcoming: 2 };
 const DEFAULT_LIVE_DEMO = "https://nagoor-personal-portfolio.vercel.app/projects";
 const completedProjectOrder = [
   "meeting-agent",
@@ -30,16 +30,15 @@ const completedProjectOrder = [
   "symbol-table-analyzer",
   "ai-timetable-generation",
   "sereniq",
-  "mindcare",
-  "quickdine",
 ];
 const completedProjectSet = new Set(completedProjectOrder);
 const completedProjectRank = new Map(completedProjectOrder.map((slug, index) => [slug, index]));
 const currentProjectOrder = [
   "mediclaim-ai",
   "house-price",
-  "prepiq-ai",
   "nova-assistant",
+  "quickdine",
+  "prepiq-ai",
 ];
 const currentProjectSet = new Set(currentProjectOrder);
 const currentProjectRank = new Map(currentProjectOrder.map((slug, index) => [slug, index]));
@@ -145,7 +144,7 @@ function mergeProjectData(project, index) {
 function normalizeProject(project, index) {
   const merged = mergeProjectData(project, index);
   const slug = canonicalProjectKey(merged) || canonicalProjectKey(project) || `project-${index}`;
-  const statusGroup = normalizeStatus(merged);
+  const statusGroup = slug === "quickdine" ? "current" : normalizeStatus(merged);
   const statusLabel = merged.statusLabel || (statusGroup === "current" ? "In Progress" : statusGroup === "upcoming" ? "Upcoming" : "Completed");
   const analysis = merged.analysis || {};
   return {
@@ -291,7 +290,7 @@ export default function Projects() {
           if (!groupItems.length) return null;
           const visible = groupItems.slice(0, visibleCounts[key]);
           const hidden = groupItems.length > visible.length;
-          const expanded = key === "completed" && visibleCounts[key] >= groupItems.length;
+          const expanded = visibleCounts[key] >= groupItems.length;
 
           return (
             <section className="project-group-block" key={key}>
@@ -315,12 +314,10 @@ export default function Projects() {
                   className="see-more-projects"
                   onClick={() => setVisibleCounts((current) => ({
                     ...current,
-                    [key]: key === "completed"
-                      ? (expanded ? initialVisible.completed : groupItems.length)
-                      : current[key] + 6,
+                    [key]: expanded ? initialVisible[key] : groupItems.length,
                   }))}
                 >
-                  {expanded ? "Show Less" : `See More ${title.replace(" Projects", "")}`} <FaChevronDown />
+                  {expanded ? "Show Less" : `See More ${key === "current" ? "In Progress Projects" : title.replace(" Projects", "")}`} <FaChevronDown />
                 </button>
               )}
             </section>
