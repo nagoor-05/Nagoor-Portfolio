@@ -15,6 +15,7 @@ import { createSectionRouter } from "./routes/contentRoutes.js";
 import { seoRoutes } from "./routes/seoRoutes.js";
 import { mediaRoutes } from "./routes/mediaRoutes.js";
 import { contactMessageRoutes } from "./routes/contactMessageRoutes.js";
+import { githubRoutes } from "./routes/githubRoutes.js";
 import { errorHandler, notFound } from "./middleware/errors.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 
@@ -28,6 +29,8 @@ const allowedOrigins = new Set([
   "http://127.0.0.1:5173",
   "http://localhost:5174",
   "http://127.0.0.1:5174",
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
 ]);
 
 app.set("trust proxy", 1);
@@ -76,6 +79,7 @@ app.use("/api/contact", createSectionRouter("contact"));
 app.use("/api/landing", createSectionRouter("landing"));
 app.use("/api/stats", createSectionRouter("stats"));
 app.use("/api/github-profile", createSectionRouter("githubProfile"));
+app.use("/api/github", githubRoutes);
 app.use("/api/seo", seoRoutes);
 app.use("/api/site-settings", createSectionRouter("siteSettings"));
 

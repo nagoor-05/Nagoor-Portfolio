@@ -24,3 +24,4 @@ work_video_frames/
 work/
 frontend/work/
 .vercel/
+.aider*

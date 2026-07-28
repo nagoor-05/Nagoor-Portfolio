@@ -1,8 +1,7 @@
-const localApiUrl = "http://127.0.0.1:5001/api";
 const productionApiUrl = "https://nagoor-portfolio-api.vercel.app/api";
 const API_URL = import.meta.env.PROD
   ? productionApiUrl
-  : (import.meta.env.VITE_API_URL || localApiUrl);
+  : (import.meta.env.VITE_API_URL || "/api");
 const USERNAME = import.meta.env.VITE_PORTFOLIO_USERNAME || "nagoor";
 
 export async function apiRequest(path, options = {}) {
@@ -28,6 +27,10 @@ export function getPublicPortfolio() {
 
 export function getArticle(slug) {
   return apiRequest(`/articles/${slug}?username=${USERNAME}`);
+}
+
+export function getLiveGitHubProfile() {
+  return apiRequest("/github/live");
 }
 
 export { API_URL, USERNAME };
