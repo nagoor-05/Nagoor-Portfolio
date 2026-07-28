@@ -1,0 +1,130 @@
+.preloader {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #050816;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.preloader-outer-border {
+  position: absolute;
+  inset: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 20px rgba(145, 94, 255, 0.1),
+    -10px -10px 40px rgba(145, 94, 255, 0.05),
+    10px 10px 40px rgba(0, 206, 168, 0.05);
+}
+
+.preloader-content {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 15px;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.preloader-name {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(90deg, #8f5cff, #22d3ee);
+  background-clip: text;
+  color: transparent;
+  text-transform: uppercase;
+}
+
+.preloader-divider {
+  width: 450px;
+  height: 1px;
+  background: linear-gradient(90deg, #8f5cff, #22d3ee);
+  position: relative;
+}
+
+.preloader-divider::before,
+.preloader-divider::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: inherit;
+}
+
+.preloader-divider::before { left: 0; }
+.preloader-divider::after { right: 0; }
+
+.preloader-subtitle {
+  color: #c3cce2;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 20px;
+}
+
+.n-logo-container {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  display: grid;
+  place-items: center;
+}
+
+.n-monogram {
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+.orbit-rings {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: rotate 10s linear infinite;
+}
+
+.platform {
+  position: absolute;
+  bottom: 0;
+  width: 150px;
+  height: 40px;
+  background: radial-gradient(ellipse, rgba(0, 206, 168, 0.3), transparent);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+@keyframes rotate {
+  from { transform: rotateX(70deg) rotateZ(0deg); }
+  to { transform: rotateX(70deg) rotateZ(360deg); }
+}
+
+.preloader-progress-shell {
+  width: 450px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.preloader-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8f5cff, #22d3ee);
+  border-radius: 3px;
+}
+
+.preloader-brand {
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #a7aec0;
+    margin-top: 10px;
+}

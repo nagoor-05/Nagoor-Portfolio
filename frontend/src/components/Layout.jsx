@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import ParticlesLayer from "./ParticlesLayer";
 import CustomCursor from "./CustomCursor";
-import SoundToggle from "./ui/SoundToggle";
 
 export default function Layout({ children }) {
   const location = useLocation();
@@ -15,7 +14,6 @@ export default function Layout({ children }) {
       <div className="aurora two" />
       <CustomCursor />
       <Navbar />
-      <SoundToggle />
       <AnimatePresence mode="wait">
         <motion.main
           key={location.pathname}

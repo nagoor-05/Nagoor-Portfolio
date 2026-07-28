@@ -1,4 +1,5 @@
-import { FaCalendarDays, FaCircleCheck, FaCircleInfo, FaCode, FaGraduationCap, FaTrophy } from "react-icons/fa6";
+import { FaCalendarDays, FaCircleCheck, FaCircleInfo } from "react-icons/fa6";
+import { Award, BadgeCheck, Code2, Flame, GraduationCap, Lightbulb, Medal, Trophy } from "lucide-react";
 import GlassCard from "../components/GlassCard";
 import PageTitle from "../components/PageTitle";
 import { usePortfolio } from "../context/PortfolioContext";
@@ -10,6 +11,12 @@ import ideaLogo from "../assets/logos/ideathon.jpg";
 export default function Achievements() {
   const { data } = usePortfolio();
   const achievements = data.achievements;
+  const statIcons = {
+    Certificates: BadgeCheck,
+    Projects: Code2,
+    Hackathons: Trophy,
+    "DSA Problems": Flame,
+  };
   const timeline = [
     ["2024", "Learning & Recovery Phase", "Focused on recovery, self-improvement, and rebuilding consistency while developing a stronger mindset toward long-term growth."],
     ["2025", "Started Programming Journey", "Began actively learning programming, software development, Java, C++, web technologies, and problem-solving fundamentals."],
@@ -35,11 +42,13 @@ export default function Achievements() {
           title="Achievements & Recognition"
           description="A collection of my academic excellence, technical certifications, competitions, and professional milestones."
         />
-        <div className="trophy-visual"><FaTrophy /></div>
+        <div className="trophy-visual"><Trophy /></div>
       </div>
 
       <div className="achievement-stats">
-        {achievements.stats.map(({ label, value, note, icon: Icon }) => (
+        {achievements.stats.map(({ label, value, note }) => {
+          const Icon = statIcons[label] || Award;
+          return (
           <GlassCard key={label} className="achievement-stat">
             <span className="achievement-stat-icon"><Icon /></span>
             <div>
@@ -48,16 +57,17 @@ export default function Achievements() {
               <small>{note}</small>
             </div>
           </GlassCard>
-        ))}
+          );
+        })}
       </div>
 
-      <AchievementSection icon={<FaGraduationCap />} title="1. Academic & Technical Certifications" description="Professional certifications that enhance my technical expertise and industry knowledge.">
+      <AchievementSection icon={<GraduationCap />} title="1. Academic & Technical Certifications" description="Professional certifications that enhance my technical expertise and industry knowledge.">
         {achievements.certifications.map((item) => (
           <CertificationCard key={item.title} item={item} />
         ))}
       </AchievementSection>
 
-      <AchievementSection icon={<FaCode />} title="2. Coding Achievements" description="Consistent practice and dedication to improve algorithmic thinking.">
+      <AchievementSection icon={<Code2 />} title="2. Coding Achievements" description="Consistent practice and dedication to improve algorithmic thinking.">
         <GlassCard className="achievement-wide-card">
           <LogoMark type="leetcode" />
           <div>
@@ -73,7 +83,7 @@ export default function Achievements() {
         </GlassCard>
       </AchievementSection>
 
-      <AchievementSection icon={<FaTrophy />} title="3. Hackathons & Competitions" description="Participated in national level hackathons and ideathons to build innovative solutions and real-world impact.">
+      <AchievementSection icon={<Trophy />} title="3. Hackathons & Competitions" description="Participated in national level hackathons and ideathons to build innovative solutions and real-world impact.">
         {achievements.competitions.map((item) => (
           <GlassCard key={item.title} className="achievement-wide-card">
             <LogoMark type={item.logoType} />
@@ -118,7 +128,7 @@ export default function Achievements() {
         <div className="achievement-mini-grid">
           {cards.map(([title, body]) => (
             <GlassCard className="achievement-mini-card" key={title}>
-              <FaCircleInfo />
+              <Lightbulb />
               <h3>{title}</h3>
               <p>{body}</p>
             </GlassCard>
@@ -179,10 +189,21 @@ function LogoMark({ type }) {
       </div>
     );
   }
+  if (type === "leetcode") {
+    return (
+      <div className="achievement-logo-frame logo-leetcode" aria-label="LeetCode logo">
+        <span className="leetcode-symbol" aria-hidden="true">
+          <i />
+          <b />
+          <em />
+        </span>
+        <strong>LeetCode</strong>
+      </div>
+    );
+  }
   return (
     <div className={`achievement-logo-frame logo-${type}`}>
-      <span className="achievement-logo-fallback">LC</span>
+      <Medal className="achievement-logo-lucide" />
     </div>
   );
 }
-

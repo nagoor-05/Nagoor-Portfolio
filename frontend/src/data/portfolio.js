@@ -487,33 +487,45 @@ export const skillGroups = [
 
 export const experiences = [
   {
-    date: "2026 - Present",
+    date: "2026 – Present",
     status: "Ongoing",
     role: "AI/ML Intern",
-    organization: "Internship Program",
-    location: "Remote / College-based",
+    organization: "Synecx AI Labs",
+    location: "Kanuvai, Coimbatore, Tamil Nadu",
+    workType: "Internship",
     description:
-      "Learning industry workflows, project structure, AI/ML concepts, team collaboration, and practical software development processes.",
+      "Working on practical AI/ML and full-stack development workflows. During this internship, I designed and developed ReconIQ, an AI-powered financial reconciliation and fraud-detection platform.",
     responsibilities: [
-      "Understanding real-world project workflows",
-      "Learning AI/ML concepts and implementation steps",
-      "Improving Python and problem-solving skills",
-      "Collaborating and learning how internship teams work",
+      "Analysing financial reconciliation and transaction-verification workflows",
+      "Designing and developing the ReconIQ platform",
+      "Building frontend and backend features",
+      "Implementing bank-statement processing and validation workflows",
+      "Developing suspicious-transaction and fraud-detection logic",
+      "Integrating AI-assisted analysis and verification reporting",
+      "Testing application workflows and fixing implementation issues",
+      "Maintaining project documentation and Git-based development",
     ],
+    skills: ["Python", "AI/ML", "React", "Node.js", "Express.js", "MongoDB", "OCR", "REST APIs", "Git", "GitHub"],
   },
   {
-    date: "2025 - Present",
-    status: "Active",
+    date: "2025 – Present",
+    status: "Project-Based",
     role: "Personal Project Developer",
-    organization: "Self Learning & Project Building",
-    location: "Tirunelveli / Coimbatore",
+    organization: "Self-Learning and Independent Project Development",
+    location: "Remote",
+    workType: "Personal Projects",
     description:
-      "Building full stack, AI/ML, and portfolio projects to strengthen practical software engineering skills.",
+      "Designing and developing practical full-stack, AI/ML, automation, cybersecurity, and portfolio applications to improve software engineering and problem-solving skills.",
     responsibilities: [
-      "Designing premium UI experiences",
-      "Practicing React, routing, animation, and component design",
-      "Building project documentation and deployment workflows",
+      "Identifying real-world problems and planning software solutions",
+      "Designing application architecture and user workflows",
+      "Developing responsive frontend interfaces",
+      "Building backend APIs and database integrations",
+      "Adding authentication, role-based access, and AI features",
+      "Testing, documenting, deploying, and continuously improving projects",
+      "Managing source code and project versions using GitHub",
     ],
+    skills: ["React", "Tailwind CSS", "Framer Motion", "Node.js", "Express.js", "MongoDB", "MySQL", "Python", "Flask", "FastAPI", "AI/ML", "GitHub", "Vercel"],
   },
 ];
 
@@ -527,7 +539,7 @@ export const githubProfile = {
   contributionLevels: [0, 1, 2, 3, 4],
   repositories: [
     {
-      name: "Nagoor Portfolio",
+      name: "Premium Personal Portfolio",
       description: "Premium cinematic developer portfolio with particles, 3D logo, AI Copilot, analytics, and admin CMS.",
       url: "https://github.com/nagoor-05",
       stars: 13,
@@ -536,8 +548,8 @@ export const githubProfile = {
       color: "#61dafb",
     },
     {
-      name: "Financial Reconciliation System",
-      description: "Smart reconciliation concept for comparing financial records and detecting inconsistencies.",
+      name: "ReconIQ",
+      description: "AI-powered financial reconciliation and fraud detection with document verification and explainable reports.",
       url: "https://github.com/nagoor-05",
       stars: 9,
       forks: 3,
@@ -545,8 +557,8 @@ export const githubProfile = {
       color: "#47bbff",
     },
     {
-      name: "Mini Compiler Lab",
-      description: "Compiler design learning project covering lexical analysis, parsing ideas, and syntax workflows.",
+      name: "Smart Symbol Table Analyzer",
+      description: "Compiler-design utility for identifiers, declarations, scopes, data types and semantic information.",
       url: "https://github.com/nagoor-05",
       stars: 7,
       forks: 2,
@@ -554,8 +566,8 @@ export const githubProfile = {
       color: "#915eff",
     },
     {
-      name: "AI Learning Notebook",
-      description: "Structured AI/ML learning notes, experiments, and model-building basics.",
+      name: "YouTube Learn",
+      description: "AI-powered learning platform that converts educational YouTube videos into notes, summaries, quizzes and study material.",
       url: "https://github.com/nagoor-05",
       stars: 6,
       forks: 2,

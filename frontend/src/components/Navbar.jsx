@@ -20,10 +20,15 @@ export default function Navbar() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: "easeOut" }}
     >
-      <NavLink to="/home" className="brand" aria-label="Go to home">
-        <span>N</span>
-        <strong>Nagoor</strong>
-      </NavLink>
+      <div className="navbar-brand-group">
+        <NavLink to="/home" className="brand" aria-label="Go to home">
+          <span>N</span>
+          <strong>Nagoor</strong>
+        </NavLink>
+        <NavLink to="/entry" className="replay-intro-link" aria-label="Open portfolio entry screen">
+          Entry
+        </NavLink>
+      </div>
       <nav>
         {navItems.map((item) => (
           <NavLink key={item.path} to={item.path} className={({ isActive }) => (isActive ? "active" : "")}>

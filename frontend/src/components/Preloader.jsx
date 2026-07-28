@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { Canvas } from "@react-three/fiber";
 import ParticlesLayer from "./ParticlesLayer";
+import { PreloaderScene } from "./PreloaderScene";
+import "../styles.css";
 
-const LOAD_DURATION = 4200;
+const LOAD_DURATION = 7000;
 
 export default function Preloader({ onDone }) {
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(1);
+  const completedRef = useRef(false);
 
   useEffect(() => {
     const start = performance.now();
@@ -13,7 +17,7 @@ export default function Preloader({ onDone }) {
     let doneTimer = 0;
 
     const tick = (now) => {
-      const next = Math.min(100, Math.round(((now - start) / LOAD_DURATION) * 100));
+      const next = Math.max(1, Math.min(100, Math.round(((now - start) / LOAD_DURATION) * 100)));
       setProgress(next);
 
       if (next < 100) {
@@ -21,7 +25,10 @@ export default function Preloader({ onDone }) {
         return;
       }
 
-      doneTimer = window.setTimeout(() => onDone?.(), 460);
+      if (!completedRef.current) {
+        completedRef.current = true;
+        doneTimer = window.setTimeout(() => onDone?.(), 460);
+      }
     };
 
     raf = requestAnimationFrame(tick);
@@ -33,50 +40,25 @@ export default function Preloader({ onDone }) {
   }, [onDone]);
 
   return (
-    <motion.section
-      className="preloader portfolio-preloader"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      aria-label="Loading Nagoor portfolio"
-    >
+    <section className="preloader-new" aria-label="Loading Nagoor portfolio">
       <ParticlesLayer />
-      <div className="intro-network intro-network-left" aria-hidden="true" />
-      <div className="intro-network intro-network-right" aria-hidden="true" />
 
-      <motion.div
-        className="preloader-stage-card"
-        initial={{ opacity: 0, y: 22, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-      >
-        <h1 className="preloader-name">
-          <span>MOHAMMED</span>
-          <span>NAGOOR</span>
-          <span>MEERASHA</span>
-        </h1>
+      <div className="preloader-middle">
+        <Canvas camera={{ position: [0, 0.35, 8.2], fov: 38 }} dpr={[1, 1.5]}>
+          <PreloaderScene autoSpin freeRotate interactive />
+        </Canvas>
+      </div>
 
-        <div className="preloader-neon-line" aria-hidden="true" />
-        <p className="preloader-message">Loading your digital universe...</p>
-
-        <div className="preloader-logo-scene" aria-hidden="true">
-          <div className="orbit-ring orbit-one" />
-          <div className="orbit-ring orbit-two" />
-          <div className="orbit-ring orbit-three" />
-          <div className="preloader-n-platform" />
-          <div className="preloader-n-mark">
-            <span className="n-pillar n-left" />
-            <span className="n-pillar n-middle" />
-            <span className="n-pillar n-right" />
+      <div className="preloader-bottom">
+        <p className="preloader-brand">MOHAMMED NAGOOR MEERASHA</p>
+        <div className="preloader-progress-container">
+          <div className="preloader-progress-bar">
+            <motion.div className="preloader-progress-fill" animate={{ width: `${progress}%` }} />
           </div>
         </div>
-
-        <p className="preloader-brand">NAGOOR PORTFOLIO</p>
-        <div className="preloader-progress-shell" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
-          <motion.span animate={{ width: `${progress}%` }} transition={{ duration: 0.18 }} />
-        </div>
-        <strong className="preloader-percent">{progress}%</strong>
-      </motion.div>
-    </motion.section>
+        <p className="preloader-percentage" aria-live="polite">{progress}%</p>
+        <p className="preloader-loading-label">LOADING...</p>
+      </div>
+    </section>
   );
 }

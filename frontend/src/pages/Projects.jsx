@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import {
-  FaArrowLeft,
   FaCheck,
   FaChevronDown,
   FaExternalLinkAlt,
@@ -13,6 +12,7 @@ import { FaArrowRightLong } from "react-icons/fa6";
 import { usePortfolio } from "../context/PortfolioContext";
 import { projects as fallbackProjects } from "../data/projectShowcase";
 import { trackEvent } from "../services/analyticsService";
+import { AnalysisListMarker, ProjectHeaderIcon, SectionIcon, WorkflowStepIcon, actionIcons } from "../components/ProjectAnalysisIcons";
 
 const statusGroups = [
   ["completed", "Completed Projects", "Finished and fully functional projects"],
@@ -20,8 +20,25 @@ const statusGroups = [
   ["upcoming", "Upcoming Projects", "Planned systems ready for development"],
 ];
 
-const initialVisible = { completed: 4, current: 3, upcoming: 2 };
+const initialVisible = { completed: 3, current: 3, upcoming: 2 };
 const DEFAULT_LIVE_DEMO = "https://nagoor-personal-portfolio.vercel.app/projects";
+const completedProjectOrder = [
+  "meeting-agent",
+  "youtube-learn",
+  "reconiq",
+  "personal-portfolio",
+  "symbol-table-analyzer",
+  "ai-timetable-generation",
+  "sereniq",
+];
+const completedProjectSet = new Set(completedProjectOrder);
+const completedProjectRank = new Map(completedProjectOrder.map((slug, index) => [slug, index]));
+const legacyProjectSlugs = new Map([
+  ["nagoor-portfolio", "personal-portfolio"],
+  ["financial-reconciliation-system", "reconiq"],
+  ["mini-compiler-lab", "symbol-table-analyzer"],
+  ["ai-learning-notebook", "youtube-learn"],
+]);
 
 function validUrl(value = "") {
   return /^https?:\/\/[^\s#]+$/i.test(String(value).trim());
@@ -47,29 +64,40 @@ function projectKey(project = {}) {
     .replace(/(^-|-$)/g, "");
 }
 
+function canonicalProjectKey(project = {}) {
+  const key = projectKey(project);
+  return legacyProjectSlugs.get(key) || key;
+}
+
 const fallbackProjectMap = new Map(
   fallbackProjects.map((project, index) => [
-    projectKey(project),
+    canonicalProjectKey(project),
     { ...project, displayOrder: project.displayOrder || project.order || index + 1 },
   ])
 );
 
 function mergeProjectData(project, index) {
-  const fallback = fallbackProjectMap.get(projectKey(project)) || {};
+  const rawKey = projectKey(project);
+  const canonicalKey = legacyProjectSlugs.get(rawKey) || rawKey;
+  const fallback = fallbackProjectMap.get(canonicalKey) || {};
+  const mergedSource = legacyProjectSlugs.has(rawKey)
+    ? { ...project, ...fallback }
+    : { ...fallback, ...project };
   const projectProgress = Number(project.progress ?? String(project.progress || "").replace("%", ""));
   const fallbackProgress = Number(fallback.progress ?? String(fallback.progress || "").replace("%", ""));
   return {
-    ...fallback,
-    ...project,
+    ...mergedSource,
     analysis: {
       ...(fallback.analysis || {}),
-      ...(project.analysis || {}),
+      ...(!legacyProjectSlugs.has(rawKey) ? (project.analysis || {}) : {}),
     },
     copilotCoverage: {
       ...(fallback.copilotCoverage || {}),
-      ...(project.copilotCoverage || {}),
+      ...(!legacyProjectSlugs.has(rawKey) ? (project.copilotCoverage || {}) : {}),
     },
-    displayOrder: Number(project.displayOrder || project.order || fallback.displayOrder || index + 1),
+    displayOrder: Number(legacyProjectSlugs.has(rawKey)
+      ? fallback.displayOrder || index + 1
+      : project.displayOrder || project.order || fallback.displayOrder || index + 1),
     progress: Number.isFinite(projectProgress) && projectProgress > 0
       ? projectProgress
       : Number.isFinite(fallbackProgress)
@@ -80,12 +108,13 @@ function mergeProjectData(project, index) {
 
 function normalizeProject(project, index) {
   const merged = mergeProjectData(project, index);
+  const slug = canonicalProjectKey(merged) || canonicalProjectKey(project) || `project-${index}`;
   const statusGroup = normalizeStatus(merged);
   const statusLabel = merged.statusLabel || (statusGroup === "current" ? "In Progress" : statusGroup === "upcoming" ? "Upcoming" : "Completed");
   const analysis = merged.analysis || {};
   return {
-    id: merged.id || merged.slug || `project-${index}`,
-    slug: merged.slug || merged.id || `project-${index}`,
+    id: slug,
+    slug,
     title: merged.title,
     statusGroup,
     statusLabel,
@@ -100,13 +129,13 @@ function normalizeProject(project, index) {
     live: merged.demoUrl || merged.live || (statusGroup === "completed" ? DEFAULT_LIVE_DEMO : ""),
     problem: merged.problem || "Problem details are available in the portfolio knowledge base.",
     solution: merged.solution || "Solution details are available in the portfolio knowledge base.",
-    features: toArray(merged.features).slice(0, 6),
+    features: toArray(merged.features).slice(0, 8),
     techStack: Array.isArray(merged.techStack)
       ? merged.techStack
       : Object.entries(merged.techStack || {}).map(([label, value]) => `${label}: ${value}`),
     workflow: toArray(merged.workflow).slice(0, 5),
-    challenges: toArray(merged.challenges).slice(0, 4),
-    limitations: toArray(merged.limitations).slice(0, 4),
+    challenges: toArray(merged.challenges).slice(0, 6),
+    limitations: toArray(merged.limitations).slice(0, 6),
     role: merged.contribution || merged.role || "Designed the workflow, planned modules, and structured the project for portfolio-ready explanation.",
     visibleInitially: merged.visibleInitially,
     displayOrder: merged.displayOrder,
@@ -115,6 +144,44 @@ function normalizeProject(project, index) {
       fiveWOneH: analysis.fiveWOneH || merged.fiveWOneH || merged.copilotCoverage?.fiveWOneH || [],
     },
   };
+}
+
+function projectActions(project) {
+  const title = project.title;
+  const upcoming = { enabled: false, reason: "Coming soon", label: "Upcoming" };
+  const currentlyUnavailable = { enabled: false, reason: "Currently unavailable", label: "Currently Unavailable" };
+  const unavailable = { enabled: false, reason: "Unavailable", label: "Unavailable" };
+
+  if (title === "AI Meeting-to-Execution Agent") {
+    return {
+      github: { enabled: true, href: "https://github.com/nagoor-05/Meeting_Converter", label: "GitHub" },
+      live: upcoming,
+    };
+  }
+
+  if (title === "Premium Personal Portfolio") {
+    return {
+      github: { enabled: true, href: "https://github.com/nagoor-05/Nagoor-Portfolio", label: "GitHub" },
+      live: { enabled: true, href: "https://nagoor-portfolio-one.vercel.app/", label: "Live Demo" },
+    };
+  }
+
+  if (title === "SereniQ — Mental Wellness Assessment Platform") {
+    return {
+      github: { enabled: true, href: "https://github.com/nagoor-05/Screening_the_Depression", label: "GitHub" },
+      live: upcoming,
+    };
+  }
+
+  if (project.statusGroup === "completed") {
+    return { github: upcoming, live: upcoming };
+  }
+
+  if (project.statusGroup === "current") {
+    return { github: currentlyUnavailable, live: currentlyUnavailable };
+  }
+
+  return { github: unavailable, live: unavailable };
 }
 
 export default function Projects() {
@@ -126,13 +193,20 @@ export default function Projects() {
   const projects = useMemo(() => {
     const mergedProjects = new Map();
     fallbackProjects.forEach((project, index) => {
-      mergedProjects.set(projectKey(project), normalizeProject(project, index));
+      mergedProjects.set(canonicalProjectKey(project), normalizeProject(project, index));
     });
     (data.projects || []).forEach((project, index) => {
-      const key = projectKey(project) || `database-project-${index}`;
+      const key = canonicalProjectKey(project) || `database-project-${index}`;
       mergedProjects.set(key, normalizeProject(project, index));
     });
-    return [...mergedProjects.values()].sort((a, b) => a.displayOrder - b.displayOrder);
+    return [...mergedProjects.values()]
+      .filter((item) => item.statusGroup !== "completed" || completedProjectSet.has(item.slug))
+      .sort((a, b) => {
+        if (a.statusGroup === "completed" && b.statusGroup === "completed") {
+          return (completedProjectRank.get(a.slug) ?? 999) - (completedProjectRank.get(b.slug) ?? 999);
+        }
+        return a.displayOrder - b.displayOrder;
+      });
   }, [data.projects]);
 
   const openProject = (item, trigger) => {
@@ -169,6 +243,7 @@ export default function Projects() {
           if (!groupItems.length) return null;
           const visible = groupItems.slice(0, visibleCounts[key]);
           const hidden = groupItems.length > visible.length;
+          const expanded = key === "completed" && visibleCounts[key] >= groupItems.length;
 
           return (
             <section className="project-group-block" key={key}>
@@ -176,7 +251,7 @@ export default function Projects() {
                 <h2>{title} <span>{groupItems.length}</span></h2>
                 <p>{note}</p>
               </div>
-              <div className="compact-project-grid">
+              <motion.div className="compact-project-grid" layout>
                 {visible.map((item, index) => (
                   <ProjectCard
                     key={item.slug}
@@ -185,14 +260,19 @@ export default function Projects() {
                     onSelect={(event) => openProject(item, event.currentTarget)}
                   />
                 ))}
-              </div>
-              {hidden && (
+              </motion.div>
+              {(hidden || expanded) && (
                 <button
                   type="button"
                   className="see-more-projects"
-                  onClick={() => setVisibleCounts((current) => ({ ...current, [key]: current[key] + 6 }))}
+                  onClick={() => setVisibleCounts((current) => ({
+                    ...current,
+                    [key]: key === "completed"
+                      ? (expanded ? initialVisible.completed : groupItems.length)
+                      : current[key] + 6,
+                  }))}
                 >
-                  See More {title.replace(" Projects", "")} <FaChevronDown />
+                  {expanded ? "Show Less" : `See More ${title.replace(" Projects", "")}`} <FaChevronDown />
                 </button>
               )}
             </section>
@@ -206,12 +286,12 @@ export default function Projects() {
 }
 
 function ProjectCard({ project, index, onSelect }) {
-  const showGithub = project.statusGroup === "completed" && validUrl(project.github);
-  const showDemo = project.statusGroup === "completed" && validUrl(project.live);
+  const actions = projectActions(project);
 
   return (
     <motion.article
       className={`compact-project-card status-${project.statusGroup}`}
+      layout
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
@@ -230,19 +310,37 @@ function ProjectCard({ project, index, onSelect }) {
         <p>{project.description}</p>
       </button>
       <div className="project-chip-row">
-        {project.categories.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}
+        {project.categories.slice(0, 4).map((tag) => <span key={tag}>{tag}</span>)}
       </div>
       <div className="project-chip-row tech">
-        {project.technologies.slice(0, 4).map((tag) => <span key={tag}>{tag}</span>)}
+        {project.technologies.slice(0, 7).map((tag) => <span key={tag}>{tag}</span>)}
       </div>
       {project.statusNote && <div className="project-progress-note">{project.statusNote}</div>}
       <p className="project-helper-text">Click Analysis to know more about this project.</p>
       <div className="compact-project-actions">
-        {showGithub && <a href={project.github} target="_blank" rel="noreferrer"><FaGithub /> GitHub</a>}
-        {showDemo && <a href={project.live} target="_blank" rel="noreferrer"><FaExternalLinkAlt /> Live Demo</a>}
+        <ProjectActionButton type="github" action={actions.github} />
+        <ProjectActionButton type="live" action={actions.live} />
         <button type="button" onClick={onSelect}>Analysis</button>
       </div>
     </motion.article>
+  );
+}
+
+function ProjectActionButton({ type, action }) {
+  const Icon = type === "github" ? FaGithub : FaExternalLinkAlt;
+  const label = type === "github" ? "GitHub" : "Live Demo";
+  if (action?.enabled && validUrl(action.href)) {
+    return (
+      <a href={action.href} target="_blank" rel="noopener noreferrer">
+        <Icon /> {label}
+      </a>
+    );
+  }
+
+  return (
+    <button type="button" className="disabled-project-action" disabled title={action?.reason || "Unavailable"} aria-label={`${label}: ${action?.reason || "Unavailable"}`}>
+      <Icon /> {label}
+    </button>
   );
 }
 
@@ -280,8 +378,10 @@ function ProjectAnalysisModal({ project, onClose }) {
   }, [project, onClose]);
 
   if (!project || typeof document === "undefined") return null;
-  const showGithub = project.statusGroup === "completed" && validUrl(project.github);
-  const showDemo = project.statusGroup === "completed" && validUrl(project.live);
+  const actions = projectActions(project);
+  const GithubIcon = actionIcons.GitHub;
+  const LiveIcon = actionIcons["Live Demo"];
+  const BackIcon = actionIcons.Back;
   const workflow = project.workflow.length ? project.workflow.slice(0, 5) : ["Input", "Process", "Analyze", "Validate", "Output"];
 
   return createPortal(
@@ -302,13 +402,14 @@ function ProjectAnalysisModal({ project, onClose }) {
           <strong>{project.progress}%</strong>
         </div>
         <div className="analysis-intro compact">
+          <ProjectHeaderIcon title={project.title} />
           <h2 id="project-analysis-title">{project.title}</h2>
           <p>{project.description}</p>
           <div className="project-chip-row center">
             {project.categories.slice(0, 4).map((tag) => <span key={tag}>{tag}</span>)}
           </div>
           <div className="project-chip-row tech center">
-            {project.technologies.slice(0, 5).map((tag) => <span key={tag}>{tag}</span>)}
+            {project.technologies.map((tag) => <span key={tag}>{tag}</span>)}
           </div>
         </div>
 
@@ -320,10 +421,11 @@ function ProjectAnalysisModal({ project, onClose }) {
         </div>
 
         <div className="workflow-strip">
-          <h3>Workflow</h3>
+          <h3><SectionIcon title="Workflow" /> Workflow</h3>
           <div>
             {workflow.map((step, index) => (
               <span key={`${step}-${index}`}>
+                <WorkflowStepIcon index={index} />
                 <em>{step}</em>
                 {index < workflow.length - 1 && <FaArrowRightLong />}
               </span>
@@ -338,9 +440,13 @@ function ProjectAnalysisModal({ project, onClose }) {
         </div>
 
         <div className="analysis-action-row">
-          {showGithub && <a href={project.github} target="_blank" rel="noreferrer">GitHub <FaExternalLinkAlt /></a>}
-          {showDemo && <a href={project.live} target="_blank" rel="noreferrer">Live Demo <FaExternalLinkAlt /></a>}
-          <button type="button" onClick={onClose}><FaArrowLeft /> Back to Projects</button>
+          {actions.github?.enabled && validUrl(actions.github.href)
+            ? <a href={actions.github.href} target="_blank" rel="noopener noreferrer"><GithubIcon size={18} /> GitHub <FaExternalLinkAlt /></a>
+            : <button type="button" className="disabled-project-action" disabled title={actions.github?.reason || "Unavailable"}><GithubIcon size={18} /> GitHub</button>}
+          {actions.live?.enabled && validUrl(actions.live.href)
+            ? <a href={actions.live.href} target="_blank" rel="noopener noreferrer">Live Demo <LiveIcon size={18} /></a>
+            : <button type="button" className="disabled-project-action" disabled title={actions.live?.reason || "Unavailable"}>Live Demo <LiveIcon size={18} /></button>}
+          <button type="button" onClick={onClose}><BackIcon size={18} /> Back to Projects</button>
         </div>
       </motion.aside>
     </div>,
@@ -352,11 +458,11 @@ function InfoBlock({ title, items, check = false }) {
   const list = toArray(items).filter(Boolean);
   return (
     <div className="analysis-info-block">
-      <h3>{title}</h3>
+      <h3><SectionIcon title={title} /> {title}</h3>
       {list.length ? (
         <ul>
           {list.map((item) => (
-            <li key={item}>{check && <FaCheck />}<span>{item}</span></li>
+            <li key={item}>{check ? <FaCheck /> : <AnalysisListMarker title={title} />}<span>{item}</span></li>
           ))}
         </ul>
       ) : <p>I don't have this specific detail yet.</p>}

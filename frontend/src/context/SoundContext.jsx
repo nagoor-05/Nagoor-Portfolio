@@ -11,8 +11,10 @@ import {
 const SoundContext = createContext(null);
 
 const ENABLED_KEY = "portfolioMusicEnabled";
+const MUTED_KEY = "portfolioMusicMuted";
 const VOLUME_KEY = "portfolioMusicVolume";
-const DEFAULT_VOLUME = 0.35;
+const PREVIOUS_VOLUME_KEY = "portfolioMusicPreviousVolume";
+const DEFAULT_VOLUME = 0.5;
 
 function readStoredEnabled() {
   try {
@@ -26,6 +28,7 @@ function readStoredEnabled() {
 function readStoredVolume() {
   try {
     const saved = localStorage.getItem(VOLUME_KEY);
+    if (saved === null || saved === "") return DEFAULT_VOLUME;
     const parsed = Number(saved);
     return Number.isFinite(parsed)
       ? Math.min(1, Math.max(0, parsed))
@@ -35,24 +38,38 @@ function readStoredVolume() {
   }
 }
 
-function isAudible(audio) {
-  return Boolean(audio && !audio.paused && !audio.muted && audio.volume > 0);
+function readStoredMuted() {
+  try {
+    const saved = localStorage.getItem(MUTED_KEY);
+    return saved === "true";
+  } catch {
+    return false;
+  }
+}
+
+function isAudioPlaying(audio) {
+  return Boolean(audio && !audio.paused);
+}
+
+function isAudioMuted(audio) {
+  return Boolean(!audio || audio.muted || audio.volume <= 0);
 }
 
 export function SoundProvider({ children }) {
   const audioRef = useRef(null);
   const userWantedAudioRef = useRef(readStoredEnabled());
+  const mutedPreferenceRef = useRef(readStoredMuted());
+  const previousVolumeRef = useRef(readStoredVolume() || DEFAULT_VOLUME);
   const unlockedRef = useRef(false);
 
   const [volume, setVolumeState] = useState(readStoredVolume);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(readStoredMuted);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const syncStateFromAudio = useCallback(() => {
     const audio = audioRef.current;
-    const audible = isAudible(audio);
-    setIsPlaying(audible);
-    setIsMuted(!audible);
+    setIsPlaying(isAudioPlaying(audio));
+    setIsMuted(isAudioMuted(audio));
   }, []);
 
   const playMusic = useCallback(async () => {
@@ -66,20 +83,20 @@ export function SoundProvider({ children }) {
       // Ignore storage errors in private modes
     }
 
-    audio.defaultMuted = false;
-    audio.muted = false;
+    audio.defaultMuted = mutedPreferenceRef.current;
+    audio.muted = mutedPreferenceRef.current || volume <= 0;
     const targetVol = volume > 0 ? volume : DEFAULT_VOLUME;
     audio.volume = Math.min(1, Math.max(0.01, targetVol));
 
     try {
       await audio.play();
-      const audible = isAudible(audio);
-      setIsPlaying(audible);
-      setIsMuted(!audible);
-      if (audible) {
+      const playing = isAudioPlaying(audio);
+      setIsPlaying(playing);
+      setIsMuted(isAudioMuted(audio));
+      if (playing) {
         unlockedRef.current = true;
       }
-      return audible;
+      return playing;
     } catch {
       setIsPlaying(false);
       setIsMuted(true);
@@ -98,21 +115,73 @@ export function SoundProvider({ children }) {
 
     if (!audio) return;
     audio.pause();
-    audio.muted = true;
     setIsPlaying(false);
-    setIsMuted(true);
+    setIsMuted(isAudioMuted(audio));
   }, []);
 
   const toggleSound = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isAudible(audio)) {
+    if (isAudioPlaying(audio)) {
       pauseMusic();
     } else {
       void playMusic();
     }
   }, [pauseMusic, playMusic]);
+
+  const muteMusic = useCallback(() => {
+    const audio = audioRef.current;
+    mutedPreferenceRef.current = true;
+    previousVolumeRef.current = volume > 0 ? volume : previousVolumeRef.current || DEFAULT_VOLUME;
+    try {
+      localStorage.setItem(MUTED_KEY, "true");
+      localStorage.setItem(PREVIOUS_VOLUME_KEY, String(previousVolumeRef.current));
+    } catch {
+      // Ignore storage errors
+    }
+    if (!audio) {
+      setIsMuted(true);
+      return;
+    }
+    audio.muted = true;
+    setIsMuted(true);
+    setIsPlaying(isAudioPlaying(audio));
+  }, [volume]);
+
+  const unmuteMusic = useCallback(async () => {
+    const audio = audioRef.current;
+    mutedPreferenceRef.current = false;
+    try {
+      localStorage.setItem(MUTED_KEY, "false");
+    } catch {
+      // Ignore storage errors
+    }
+    if (!audio) return false;
+    let nextVolume = volume;
+    if (nextVolume <= 0) {
+      try {
+        const savedPrevious = Number(localStorage.getItem(PREVIOUS_VOLUME_KEY));
+        nextVolume = Number.isFinite(savedPrevious) && savedPrevious > 0 ? savedPrevious : previousVolumeRef.current || DEFAULT_VOLUME;
+      } catch {
+        nextVolume = previousVolumeRef.current || DEFAULT_VOLUME;
+      }
+      nextVolume = Math.min(1, Math.max(0.01, nextVolume));
+      setVolumeState(nextVolume);
+      try {
+        localStorage.setItem(VOLUME_KEY, String(nextVolume));
+      } catch {
+        // Ignore storage errors
+      }
+    }
+    audio.muted = false;
+    audio.volume = Math.max(0.01, nextVolume || DEFAULT_VOLUME);
+    if (userWantedAudioRef.current && audio.paused) {
+      return playMusic();
+    }
+    syncStateFromAudio();
+    return true;
+  }, [playMusic, syncStateFromAudio, volume]);
 
   const setVolume = useCallback(
     (nextValue) => {
@@ -126,15 +195,35 @@ export function SoundProvider({ children }) {
       } catch {
         // Ignore storage errors
       }
+      if (valid > 0) {
+        previousVolumeRef.current = valid;
+        try {
+          localStorage.setItem(PREVIOUS_VOLUME_KEY, String(valid));
+        } catch {
+          // Ignore storage errors
+        }
+      }
 
       const audio = audioRef.current;
       if (!audio) return;
       audio.volume = valid;
       if (valid <= 0) {
+        mutedPreferenceRef.current = true;
+        try {
+          localStorage.setItem(MUTED_KEY, "true");
+        } catch {
+          // Ignore storage errors
+        }
         audio.muted = true;
         setIsMuted(true);
-        setIsPlaying(false);
-      } else if (unlockedRef.current && userWantedAudioRef.current) {
+        setIsPlaying(isAudioPlaying(audio));
+      } else {
+        mutedPreferenceRef.current = false;
+        try {
+          localStorage.setItem(MUTED_KEY, "false");
+        } catch {
+          // Ignore storage errors
+        }
         audio.muted = false;
         syncStateFromAudio();
       }
@@ -148,6 +237,7 @@ export function SoundProvider({ children }) {
     if (!audio) return undefined;
 
     audio.volume = Math.max(0.01, volume || DEFAULT_VOLUME);
+    audio.muted = mutedPreferenceRef.current || volume <= 0;
 
     const handleStateChange = () => syncStateFromAudio();
     const handleError = () => {
@@ -205,8 +295,10 @@ export function SoundProvider({ children }) {
       playMusic,
       pauseMusic,
       setVolume,
+      muteMusic,
+      unmuteMusic,
     }),
-    [isMuted, isPlaying, pauseMusic, playMusic, setVolume, toggleSound, volume]
+    [isMuted, isPlaying, muteMusic, pauseMusic, playMusic, setVolume, toggleSound, unmuteMusic, volume]
   );
 
   return (
@@ -230,4 +322,3 @@ export function useSound() {
   }
   return context;
 }
-

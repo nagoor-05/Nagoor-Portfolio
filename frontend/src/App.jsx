@@ -1,15 +1,15 @@
-import { lazy, useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Layout from "./components/Layout";
 import Preloader from "./components/Preloader";
 import Landing from "./pages/Landing";
-import PortfolioEntryScreen from "./pages/PortfolioEntryScreen";
 import AiCopilot from "./components/ai/AiCopilot";
 import { usePortfolio } from "./context/PortfolioContext";
 import { useSound } from "./context/SoundContext";
 import { usePageTracking } from "./hooks/usePageTracking";
 
+const PortfolioEntryScreen = lazy(() => import("./pages/PortfolioEntryScreen"));
 const Home = lazy(() => import("./pages/Home"));
 const About = lazy(() => import("./pages/About"));
 const Education = lazy(() => import("./pages/Education"));
@@ -25,6 +25,10 @@ const Contact = lazy(() => import("./pages/Contact"));
 
 const ONBOARDING_COMPLETED_KEY = "portfolioOnboardingCompleted";
 const ENTRY_COMPLETED_KEY = "portfolioEntryCompleted";
+const WELCOME_SHOWN_KEY = "portfolioWelcomeShown";
+const FULLSCREEN_PROMPTED_KEY = "portfolioFullscreenPrompted";
+const FULLSCREEN_ACCEPTED_KEY = "portfolioFullscreenAccepted";
+const WELCOME_MESSAGE = "Welcome to my universe. I hope you're doing well. Enjoy exploring my journey.";
 
 function hasCompletedOnboarding() {
   return (
@@ -40,12 +44,47 @@ function hasCompletedEntry() {
   );
 }
 
+function shouldShowInitialLoader() {
+  if (typeof window === "undefined") return false;
+  const pathname = window.location.pathname;
+  return (pathname === "/" || pathname === "/landing") && !hasCompletedOnboarding() && !hasCompletedEntry();
+}
+
+function isFullscreenActive() {
+  if (typeof document === "undefined") return false;
+  return Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+}
+
+function hasHandledFullscreenGate() {
+  if (typeof window === "undefined") return true;
+  return (
+    window.sessionStorage.getItem(FULLSCREEN_PROMPTED_KEY) === "true" ||
+    window.sessionStorage.getItem(FULLSCREEN_ACCEPTED_KEY) === "true"
+  );
+}
+
+async function requestPortfolioFullscreen() {
+  if (typeof document === "undefined") return false;
+  if (isFullscreenActive()) return true;
+  const target = document.documentElement;
+  const requestFullscreen =
+    target.requestFullscreen ||
+    target.webkitRequestFullscreen ||
+    target.msRequestFullscreen;
+
+  if (!requestFullscreen) return false;
+  await requestFullscreen.call(target);
+  return true;
+}
+
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data } = usePortfolio();
   const { playMusic } = useSound();
-  const [loading, setLoading] = useState(() => !hasCompletedOnboarding() && !hasCompletedEntry());
+  const [loading, setLoading] = useState(shouldShowInitialLoader);
+  const [fullscreenPromptVisible, setFullscreenPromptVisible] = useState(false);
+  const [welcomeVisible, setWelcomeVisible] = useState(false);
   const onboardingComplete = hasCompletedOnboarding();
   const entryComplete = hasCompletedEntry();
   usePageTracking();
@@ -62,21 +101,84 @@ export default function App() {
   }, [navigate]);
 
   const enterPortfolio = useCallback(async () => {
+    let shouldWelcome = false;
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
       window.sessionStorage.setItem(ENTRY_COMPLETED_KEY, "true");
+      shouldWelcome = window.sessionStorage.getItem(WELCOME_SHOWN_KEY) !== "true";
+      if (shouldWelcome) {
+        window.sessionStorage.setItem(WELCOME_SHOWN_KEY, "true");
+      }
     }
     await playMusic();
+    if (shouldWelcome) {
+      setWelcomeVisible(true);
+      void speakWelcomeMessage().finally(() => {
+        window.setTimeout(() => setWelcomeVisible(false), 600);
+      });
+    }
     navigate("/home");
   }, [navigate, playMusic]);
 
-  const finishLoading = useCallback(() => {
-    setLoading(false);
+  useEffect(() => {
+    if (!welcomeVisible) return undefined;
+    const timer = window.setTimeout(() => setWelcomeVisible(false), 7000);
+    return () => window.clearTimeout(timer);
+  }, [welcomeVisible]);
+
+  const finishLoading = useCallback(async () => {
+    if (hasHandledFullscreenGate()) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const fullscreenStarted = await requestPortfolioFullscreen();
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(
+          fullscreenStarted ? FULLSCREEN_ACCEPTED_KEY : FULLSCREEN_PROMPTED_KEY,
+          "true"
+        );
+      }
+      setLoading(false);
+    } catch {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(FULLSCREEN_PROMPTED_KEY, "true");
+      }
+      setLoading(false);
+      setFullscreenPromptVisible(true);
+    }
+  }, []);
+
+  const handleFullscreenPromptEnter = useCallback(async () => {
+    try {
+      const fullscreenStarted = await requestPortfolioFullscreen();
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(
+          fullscreenStarted ? FULLSCREEN_ACCEPTED_KEY : FULLSCREEN_PROMPTED_KEY,
+          "true"
+        );
+      }
+    } catch {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(FULLSCREEN_PROMPTED_KEY, "true");
+      }
+    } finally {
+      setFullscreenPromptVisible(false);
+    }
   }, []);
 
   if (loading) return <Preloader onDone={finishLoading} />;
 
-  if (location.pathname === "/" || location.pathname === "/landing") {
+  if (fullscreenPromptVisible) {
+    return <FullscreenGate onEnter={handleFullscreenPromptEnter} />;
+  }
+
+  if (location.pathname === "/landing") {
+    return <Landing onFinishOnboarding={finishOnboarding} />;
+  }
+
+  if (location.pathname === "/") {
     if (!onboardingComplete) {
       return <Landing onFinishOnboarding={finishOnboarding} />;
     }
@@ -89,10 +191,11 @@ export default function App() {
   }
 
   if (location.pathname === "/entry") {
-    if (entryComplete) {
-      return <Navigate to="/home" replace />;
-    }
-    return <PortfolioEntryScreen onEnter={enterPortfolio} />;
+    return (
+      <Suspense fallback={<div className="center-screen">Loading...</div>}>
+        <PortfolioEntryScreen onEnter={enterPortfolio} />
+      </Suspense>
+    );
   }
 
   if (location.pathname === "/home" && !entryComplete) {
@@ -118,7 +221,11 @@ export default function App() {
           <Route path="/landing" element={<Landing onFinishOnboarding={finishOnboarding} />} />
           <Route
             path="/entry"
-            element={entryComplete ? <Navigate to="/home" replace /> : <PortfolioEntryScreen onEnter={enterPortfolio} />}
+            element={
+              <Suspense fallback={<div className="center-screen">Loading...</div>}>
+                <PortfolioEntryScreen onEnter={enterPortfolio} />
+              </Suspense>
+            }
           />
           <Route
             path="/home"
@@ -139,7 +246,74 @@ export default function App() {
         </Routes>
       </AnimatePresence>
       <AiCopilot />
+      <WelcomeToast visible={welcomeVisible} />
     </Layout>
+  );
+}
+
+function FullscreenGate({ onEnter }) {
+  return (
+    <section className="fullscreen-gate" aria-labelledby="fullscreen-gate-title">
+      <div className="fullscreen-gate-grid" aria-hidden="true" />
+      <motion.div
+        className="fullscreen-gate-card"
+        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.38, ease: "easeOut" }}
+      >
+        <span className="fullscreen-gate-orb" aria-hidden="true" />
+        <p className="fullscreen-gate-kicker">Immersive Mode</p>
+        <h1 id="fullscreen-gate-title">Enter Fullscreen</h1>
+        <p>
+          Open the portfolio in fullscreen for the cleanest cinematic experience.
+          You can leave fullscreen anytime and the journey will continue normally.
+        </p>
+        <button type="button" className="fullscreen-gate-button" onClick={onEnter}>
+          Enter Fullscreen
+        </button>
+      </motion.div>
+    </section>
+  );
+}
+
+function speakWelcomeMessage() {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return Promise.resolve();
+  const utterance = new SpeechSynthesisUtterance(WELCOME_MESSAGE);
+  utterance.rate = 0.94;
+  utterance.pitch = 1.02;
+  utterance.volume = 0.82;
+  return new Promise((resolve) => {
+    const fallback = window.setTimeout(resolve, 5200);
+    utterance.onend = () => {
+      window.clearTimeout(fallback);
+      resolve();
+    };
+    utterance.onerror = () => {
+      window.clearTimeout(fallback);
+      resolve();
+    };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
+function WelcomeToast({ visible }) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          className="portfolio-welcome-toast"
+          role="status"
+          initial={{ opacity: 0, y: 18, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 12, scale: 0.98 }}
+          transition={{ duration: 0.32, ease: "easeOut" }}
+        >
+          <strong>Welcome to my universe.</strong>
+          <span>I hope you're doing well. Enjoy exploring my journey.</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
