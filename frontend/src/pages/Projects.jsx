@@ -228,12 +228,12 @@ export default function Projects() {
 
   const projects = useMemo(() => {
     const mergedProjects = new Map();
-    fallbackProjects.forEach((project, index) => {
-      mergedProjects.set(canonicalProjectKey(project), normalizeProject(project, index));
-    });
     (data.projects || []).forEach((project, index) => {
       const key = canonicalProjectKey(project) || `database-project-${index}`;
       mergedProjects.set(key, normalizeProject(project, index));
+    });
+    fallbackProjects.forEach((project, index) => {
+      mergedProjects.set(canonicalProjectKey(project), normalizeProject(project, index));
     });
     return [...mergedProjects.values()]
       .filter((item) => {
